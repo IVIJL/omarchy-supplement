@@ -30,7 +30,38 @@ chmod +x *.sh
 ./install-all.sh
 ```
 
-Or run individual scripts:
+### Installation modes
+
+**Interactive mode** (default):
+```bash
+./install-all.sh
+# Shows numbered list, select scripts by number
+# Enter = install all
+```
+
+**Install all** (no interaction):
+```bash
+./install-all.sh all
+# Installs everything without prompts (useful for automation)
+```
+
+**Select by name**:
+```bash
+./install-all.sh uv rust chezmoi
+# Installs only install-uv.sh, install-rust.sh, install-chezmoi.sh
+```
+
+**Exclude by name**:
+```bash
+./install-all.sh !uv !rust
+# Installs all except install-uv.sh and install-rust.sh
+```
+
+**Note**: Cannot mix positive and negative selection (e.g., `uv !rust` will error).
+
+### Run individual scripts
+
+You can also run scripts directly:
 
 ```bash
 ./install-rust.sh
