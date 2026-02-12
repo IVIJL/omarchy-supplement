@@ -6,18 +6,18 @@ Inspired by [typecraft-dev/omarchy-supplement](https://github.com/typecraft-dev/
 
 ## What it installs
 
-| Script | What it does |
-|---|---|
-| `install-packages.sh` | Basic tools: nano, unzip, curl, ncdu, mc, fastfetch |
-| `install-uv.sh` | [UV](https://github.com/astral-sh/uv) Python package manager (global multi-user setup) |
-| `install-glances.sh` | [Glances](https://nicolargo.github.io/glances/) system monitor (via uv or yay) |
-| `install-rust.sh` | [Rust](https://www.rust-lang.org/) & Cargo via rustup |
-| `install-atuin.sh` | [Atuin](https://atuin.sh/) shell history manager |
-| `install-zsh-plugins.sh` | ZSH plugins: autosuggestions, syntax-highlighting, z, fzf-tab |
-| `install-yazi.sh` | [Yazi](https://yazi-rs.github.io/) terminal file manager |
-| `install-wezterm.sh` | [WezTerm](https://wezfurlong.org/wezterm/) terminal emulator + sets as primary terminal (Super+Enter) |
-| `install-chezmoi.sh` | [Chezmoi](https://www.chezmoi.io/) dotfiles from [IVIJL/vlci-dotfiles](https://github.com/IVIJL/vlci-dotfiles) |
-| `set-shell.sh` | Ensures ZSH is the default shell |
+| Script                   | What it does                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `install-packages.sh`    | Basic tools: nano, unzip, curl, ncdu, mc, fastfetch                                                            |
+| `install-uv.sh`          | [UV](https://github.com/astral-sh/uv) Python package manager (global multi-user setup)                         |
+| `install-glances.sh`     | [Glances](https://nicolargo.github.io/glances/) system monitor (via uv or yay)                                 |
+| `install-rust.sh`        | [Rust](https://www.rust-lang.org/) & Cargo via rustup                                                          |
+| `install-atuin.sh`       | [Atuin](https://atuin.sh/) shell history manager                                                               |
+| `install-zsh-plugins.sh` | ZSH plugins: autosuggestions, syntax-highlighting, z, fzf-tab                                                  |
+| `install-yazi.sh`        | [Yazi](https://yazi-rs.github.io/) terminal file manager                                                       |
+| `install-wezterm.sh`     | [WezTerm](https://wezfurlong.org/wezterm/) terminal emulator + sets as primary terminal (Super+Enter)          |
+| `install-chezmoi.sh`     | [Chezmoi](https://www.chezmoi.io/) dotfiles from [IVIJL/vlci-dotfiles](https://github.com/IVIJL/vlci-dotfiles) |
+| `set-shell.sh`           | Ensures ZSH is the default shell                                                                               |
 
 ## What Omarchy already provides (not reinstalled)
 
@@ -29,12 +29,13 @@ Inspired by [typecraft-dev/omarchy-supplement](https://github.com/typecraft-dev/
 git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 cd ~/omarchy-supplement
 chmod +x *.sh
-./install-all.sh
+./install-all.sh all
 ```
 
 ### Installation modes
 
 **Interactive mode** (default):
+
 ```bash
 ./install-all.sh
 # Shows numbered list, select scripts by number
@@ -42,18 +43,21 @@ chmod +x *.sh
 ```
 
 **Install all** (no interaction):
+
 ```bash
 ./install-all.sh all
 # Installs everything without prompts (useful for automation)
 ```
 
 **Select by name**:
+
 ```bash
 ./install-all.sh uv rust chezmoi
 # Installs only install-uv.sh, install-rust.sh, install-chezmoi.sh
 ```
 
 **Exclude by name**:
+
 ```bash
 ./install-all.sh !uv !rust
 # Installs all except install-uv.sh and install-rust.sh

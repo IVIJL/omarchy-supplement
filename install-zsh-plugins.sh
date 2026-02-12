@@ -1,45 +1,30 @@
 #!/bin/bash
 
 # Install extra ZSH plugins not included in Omarchy
-# Source: installdefaults.sh lines 766-786
-# Chezmoi dotfiles (.zshrc) should already source these plugins
+# Clones plugins to /usr/share/{plugin}/ to match .zshrc source paths
+# managed by Chezmoi (vlci-dotfiles)
 
 set -e
 
 echo ">> Installing ZSH plugins..."
 
-if command -v yay &>/dev/null; then
-  # Install from AUR - these are the standard Arch packages for zsh plugins
-  yay -S --noconfirm --needed \
-    zsh-autosuggestions \
-    zsh-syntax-highlighting \
-    zsh-z-git \
-    fzf-tab-git
+clone_plugin() {
+  local name="$1"
+  local repo="$2"
+  local dest="/usr/share/$name"
 
-  echo ">> ZSH plugins installed via yay."
-else
-  # Fallback: clone manually (same as original installdefaults.sh)
-  echo "yay not found, cloning plugins manually..."
-
-  if [ ! -d /usr/share/zsh-autosuggestions/ ]; then
-    sudo mkdir -p /usr/share/zsh-autosuggestions/
-    sudo git clone https://github.com/zsh-users/zsh-autosuggestions /usr/share/zsh-autosuggestions/
+  if [ -d "$dest" ]; then
+    echo "$name already installed at $dest, skipping."
+  else
+    echo "Cloning $name..."
+    sudo mkdir -p "$dest"
+    sudo git clone "$repo" "$dest"
   fi
+}
 
-  if [ ! -d /usr/share/zsh-z/ ]; then
-    sudo mkdir -p /usr/share/zsh-z/
-    sudo git clone https://github.com/agkozak/zsh-z.git /usr/share/zsh-z/
-  fi
+clone_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions"
+clone_plugin "zsh-z"               "https://github.com/agkozak/zsh-z.git"
+clone_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+clone_plugin "fzf-tab"             "https://github.com/Aloxaf/fzf-tab"
 
-  if [ ! -d /usr/share/zsh-syntax-highlighting/ ]; then
-    sudo mkdir -p /usr/share/zsh-syntax-highlighting/
-    sudo git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /usr/share/zsh-syntax-highlighting/
-  fi
-
-  if [ ! -d /usr/share/fzf-tab/ ]; then
-    sudo mkdir -p /usr/share/fzf-tab/
-    sudo git clone https://github.com/Aloxaf/fzf-tab /usr/share/fzf-tab/
-  fi
-
-  echo ">> ZSH plugins installed via git clone."
-fi
+echo ">> ZSH plugins installed."
