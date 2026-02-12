@@ -14,6 +14,8 @@ Inspired by [typecraft-dev/omarchy-supplement](https://github.com/typecraft-dev/
 | `install-rust.sh` | [Rust](https://www.rust-lang.org/) & Cargo via rustup |
 | `install-atuin.sh` | [Atuin](https://atuin.sh/) shell history manager |
 | `install-zsh-plugins.sh` | ZSH plugins: autosuggestions, syntax-highlighting, z, fzf-tab |
+| `install-yazi.sh` | [Yazi](https://yazi-rs.github.io/) terminal file manager |
+| `install-wezterm.sh` | [WezTerm](https://wezfurlong.org/wezterm/) terminal emulator + sets as primary terminal (Super+Enter) |
 | `install-chezmoi.sh` | [Chezmoi](https://www.chezmoi.io/) dotfiles from [IVIJL/vlci-dotfiles](https://github.com/IVIJL/vlci-dotfiles) |
 | `set-shell.sh` | Ensures ZSH is the default shell |
 
