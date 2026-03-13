@@ -1,9 +1,12 @@
 #!/bin/bash
 
 # Install Atuin - shell history manager
-# Source: installdefaults.sh lines 155-186
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
 
 echo ">> Installing Atuin..."
 
@@ -12,12 +15,11 @@ if command -v atuin &>/dev/null; then
   exit 0
 fi
 
-# Install via yay (AUR)
-if command -v yay &>/dev/null; then
+# Install: yay on Arch, official installer everywhere else
+if [ "$OS" = "arch" ] && command -v yay &>/dev/null; then
   yay -S --noconfirm --needed atuin
 else
-  # Fallback: official installer
-  echo "yay not found, using official Atuin installer..."
+  echo "Using official Atuin installer..."
   curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 fi
 
@@ -53,6 +55,7 @@ if [ -f "$HOME/.zshrc" ]; then
   sed -i '/\.atuin\/bin\/env/d' "$HOME/.zshrc"
   sed -i '/\.local\/bin\/env/d' "$HOME/.zshrc"
   # Remove lines where eval is at the start (not inside if blocks)
+  # shellcheck disable=SC2016 # intentional: matching literal $(atuin init
   sed -i '/^eval "$(atuin init/d' "$HOME/.zshrc"
 fi
 

@@ -1,32 +1,63 @@
 # Omarchy Supplement
 
-Personal supplement for [Omarchy](https://github.com/basecamp/omarchy) -- additional packages, tools, and dotfiles configuration. Meant to be run **after** installing Omarchy.
+Personal supplement for [Omarchy](https://github.com/basecamp/omarchy) -- additional packages, tools, and dotfiles configuration. Works on **Arch Linux** (after Omarchy) and **WSL2 Ubuntu 24.04** (standalone).
 
 Inspired by [typecraft-dev/omarchy-supplement](https://github.com/typecraft-dev/omarchy-supplement).
 
+## Supported platforms
+
+| Platform | Notes |
+| --- | --- |
+| **Arch Linux** | Run after installing Omarchy. WezTerm, base tools available. |
+| **WSL2 Ubuntu 24.04** | Standalone. `install-base.sh` replaces what Omarchy provides. WezTerm auto-skipped (install on Windows). |
+
+The installer auto-detects the platform and filters scripts accordingly.
+
 ## What it installs
 
-| Script                   | What it does                                                                                                   |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `install-packages.sh`    | Basic tools: nano, unzip, curl, ncdu, mc, fastfetch                                                            |
-| `install-uv.sh`          | [UV](https://github.com/astral-sh/uv) Python package manager (global multi-user setup)                         |
-| `install-glances.sh`     | [Glances](https://nicolargo.github.io/glances/) system monitor (via uv or yay)                                 |
-| `install-rust.sh`        | [Rust](https://www.rust-lang.org/) & Cargo via rustup                                                          |
-| `install-atuin.sh`       | [Atuin](https://atuin.sh/) shell history manager                                                               |
-| `install-zsh-plugins.sh` | ZSH plugins: autosuggestions, syntax-highlighting, z, fzf-tab                                                  |
-| `install-yazi.sh`        | [Yazi](https://yazi-rs.github.io/) terminal file manager                                                       |
-| `install-wezterm.sh`     | [WezTerm](https://wezfurlong.org/wezterm/) terminal emulator + sets as primary terminal (Super+Enter)          |
-| `install-chezmoi.sh`     | [Chezmoi](https://www.chezmoi.io/) dotfiles from [IVIJL/vlci-dotfiles](https://github.com/IVIJL/vlci-dotfiles) |
-| `set-shell.sh`           | Ensures ZSH is the default shell                                                                               |
+| Script | What it does | Arch | Ubuntu/WSL2 |
+| --- | --- | :---: | :---: |
+| `install-base.sh` | Base tools: git, zsh, bat, eza, starship, fzf (on Arch provided by Omarchy) | skip | yes |
+| `install-packages.sh` | Basic tools: nano, unzip, curl, ncdu, mc, fastfetch, nala | yes | yes |
+| `install-uv.sh` | [UV](https://github.com/astral-sh/uv) Python package manager (global multi-user setup) | yes | yes |
+| `install-glances.sh` | [Glances](https://nicolargo.github.io/glances/) system monitor (via uv or package manager) | yes | yes |
+| `install-rust.sh` | [Rust](https://www.rust-lang.org/) & Cargo via rustup | yes | yes |
+| `install-atuin.sh` | [Atuin](https://atuin.sh/) shell history manager | yes | yes |
+| `install-zsh-plugins.sh` | ZSH plugins: autosuggestions, syntax-highlighting, z, fzf-tab | yes | yes |
+| `install-yazi.sh` | [Yazi](https://yazi-rs.github.io/) terminal file manager | yes | yes |
+| `install-gdu.sh` | [GDU](https://github.com/dundee/gdu) fast disk usage analyzer (replaces ncdu) | yes | yes |
+| `install-neovim.sh` | [Neovim](https://neovim.io/) + LazyVim (global shared setup with appimage) | yes | yes |
+| `install-grc.sh` | [GRC](https://github.com/garabik/grc) generic colorizer | yes | yes |
+| `install-wezterm.sh` | [WezTerm](https://wezfurlong.org/wezterm/) terminal emulator (Super+Enter) | yes | skip |
+| `install-chezmoi.sh` | [Chezmoi](https://www.chezmoi.io/) dotfiles from [IVIJL/vlci-dotfiles](https://github.com/IVIJL/vlci-dotfiles) | yes | yes |
+| `set-shell.sh` | Ensures ZSH is the default shell | yes | yes |
 
-## What Omarchy already provides (not reinstalled)
+## Quick install (one-liner)
 
-- Neovim, Zsh, Starship, Eza, Fzf, Nerd Fonts, curl, git, unzip
+**Arch Linux (main branch):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/main/install-all.sh -o /dev/null && \
+  git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
+  cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
+```
+
+**WSL2 Ubuntu 24.04 (wsl2-ubuntu branch):**
+
+```bash
+git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
+  cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
+```
 
 ## Usage
 
 ```bash
+# Arch (main branch)
 git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
+
+# WSL2 Ubuntu (wsl2-ubuntu branch)
+git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
+
 cd ~/omarchy-supplement
 chmod +x *.sh
 ./install-all.sh all
@@ -82,6 +113,23 @@ You can also run scripts directly:
 sudo ./install-uv.sh
 ```
 
+## WSL2 Ubuntu 24.04 quick start
+
+```bash
+# 1. Clone the wsl2-ubuntu branch
+git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
+cd ~/omarchy-supplement
+chmod +x *.sh
+
+# 2. Install everything (WezTerm auto-skipped, base tools auto-included)
+./install-all.sh all
+
+# 3. Restart your shell
+exec zsh
+```
+
+WezTerm is automatically skipped on WSL2 -- install it on the Windows host instead. Nerd Fonts should also be installed on Windows for proper terminal rendering.
+
 ## Migrating existing chezmoi dotfiles to GitHub
 
 If you already use chezmoi on another machine (e.g. work servers pulling from GitLab), here's how to push those dotfiles to `IVIJL/vlci-dotfiles` on GitHub:
@@ -108,9 +156,9 @@ git push github main
 # 5. Done! Your dotfiles are now on GitHub.
 ```
 
-After that, on any new Omarchy machine you just run `./install-chezmoi.sh` and it pulls from GitHub automatically (no SSH key needed -- it's a public repo via HTTPS).
+After that, on any new machine you just run `./install-chezmoi.sh` and it pulls from GitHub automatically (no SSH key needed -- it's a public repo via HTTPS).
 
-To keep using chezmoi day-to-day on the Omarchy machine with push access:
+To keep using chezmoi day-to-day with push access:
 
 ```bash
 # After making dotfile changes, commit and push

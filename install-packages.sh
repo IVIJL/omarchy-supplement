@@ -1,23 +1,44 @@
 #!/bin/bash
 
-# Install basic packages via pacman/yay
-# Source: installdefaults.sh lines 3-10 (converted from apt to Arch)
+# Install basic packages
+# Arch: pacman, Ubuntu: apt (with PPA for fastfetch)
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 echo ">> Installing basic packages..."
 
-# Packages available in official Arch repos
-sudo pacman -S --noconfirm --needed \
+# Common packages (same name on both distros)
+pkg_install \
   nano \
   unzip \
   curl \
-  ncdu \
   mc
 
-# fastfetch replaces neofetch on Arch (neofetch is archived)
+# ncdu - available on both
+pkg_install ncdu
+
+# nala - nicer apt frontend (Ubuntu only)
+if [ "$OS" = "ubuntu" ]; then
+  pkg_install nala
+fi
+
+# fastfetch - replaces neofetch (archived)
 if ! command -v fastfetch &>/dev/null; then
-  sudo pacman -S --noconfirm --needed fastfetch
+  case "$OS" in
+    arch)
+      pkg_install fastfetch
+      ;;
+    ubuntu)
+      echo "Adding fastfetch PPA..."
+      sudo add-apt-repository -y ppa:zhangsongcui3371/fastfetch
+      sudo apt-get update
+      sudo apt-get install -y fastfetch
+      ;;
+  esac
 fi
 
 echo ">> Basic packages installed."

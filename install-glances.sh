@@ -1,11 +1,14 @@
 #!/bin/bash
 
 # Install Glances - system monitor
-# Source: installdefaults.sh lines 110-123
 # Primary: uv tool install (requires UV + sudo for global install)
-# Fallback: yay from AUR
+# Fallback: yay (Arch) or apt (Ubuntu)
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
 
 echo ">> Installing Glances..."
 
@@ -25,15 +28,27 @@ if command -v uv &>/dev/null; then
     echo ">> Glances installed via uv."
     exit 0
   else
-    echo "UV install failed, falling back to yay..."
+    echo "UV install failed, falling back to package manager..."
   fi
 fi
 
-# Fallback: install via yay
-if command -v yay &>/dev/null; then
-  yay -S --noconfirm --needed glances
-  echo ">> Glances installed via yay."
-else
-  echo "ERROR: Neither uv nor yay available. Cannot install Glances."
-  exit 1
-fi
+# Fallback: package manager
+case "$OS" in
+  arch)
+    if command -v yay &>/dev/null; then
+      yay -S --noconfirm --needed glances
+    else
+      echo "ERROR: Neither uv nor yay available. Cannot install Glances."
+      exit 1
+    fi
+    ;;
+  ubuntu)
+    pkg_install glances
+    ;;
+  *)
+    echo "ERROR: Cannot install Glances on unsupported OS."
+    exit 1
+    ;;
+esac
+
+echo ">> Glances installed."

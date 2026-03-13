@@ -79,12 +79,17 @@ EOF
 fi
 
 # Patch /etc/zsh/zshenv for zsh shell
-# On Arch, zshenv may be at /etc/zsh/zshenv or /etc/zshenv
+# zshenv may be at /etc/zsh/zshenv (Arch/Ubuntu) or /etc/zshenv
 ZSHENV=""
 if [ -f /etc/zsh/zshenv ]; then
   ZSHENV="/etc/zsh/zshenv"
 elif [ -f /etc/zshenv ]; then
   ZSHENV="/etc/zshenv"
+elif command -v zsh &>/dev/null; then
+  # zsh is installed but zshenv doesn't exist yet - create it
+  mkdir -p /etc/zsh
+  touch /etc/zsh/zshenv
+  ZSHENV="/etc/zsh/zshenv"
 fi
 
 if [ -n "$ZSHENV" ]; then

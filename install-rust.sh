@@ -30,6 +30,7 @@ EOF
 
 # Source env for current session
 if [ -f "$HOME/.cargo/env" ]; then
+  # shellcheck source=/dev/null
   . "$HOME/.cargo/env"
 fi
 

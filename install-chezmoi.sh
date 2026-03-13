@@ -8,14 +8,18 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 echo ">> Installing Chezmoi..."
 
 if ! command -v chezmoi &>/dev/null; then
-  # Install via yay if available, otherwise official installer
-  if command -v yay &>/dev/null; then
+  # Install via yay on Arch, official installer everywhere else
+  if [ "$OS" = "arch" ] && command -v yay &>/dev/null; then
     yay -S --noconfirm --needed chezmoi
   else
-    echo "yay not found, using official Chezmoi installer..."
+    echo "Using official Chezmoi installer..."
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
   fi

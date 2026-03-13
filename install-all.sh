@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Omarchy Supplement - Main installer with script selection
-# Run after installing Omarchy: https://github.com/basecamp/omarchy
+# Supports Arch Linux (with Omarchy) and WSL2 Ubuntu 24.04
 #
 # Usage:
 #   git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
@@ -17,29 +17,54 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Detect all install-*.sh scripts (excluding install-all.sh itself)
-mapfile -t SCRIPTS < <(for f in install-*.sh; do
-  [ "$f" != "install-all.sh" ] && echo "$f"
-done | sort)
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
+# Scripts to exclude based on platform
+declare -A PLATFORM_SKIP
+if [ "$IS_WSL" = true ] || [ "$OS" = "ubuntu" ]; then
+  PLATFORM_SKIP[install-wezterm.sh]=1
+fi
+if [ "$OS" = "arch" ]; then
+  PLATFORM_SKIP[install-base.sh]=1
+fi
+
+# Detect all install-*.sh scripts (excluding install-all.sh and platform-skipped)
+SCRIPTS=()
+while IFS= read -r f; do
+  [ "$f" = "install-all.sh" ] && continue
+  [ "${PLATFORM_SKIP[$f]+set}" = "set" ] && continue
+  SCRIPTS+=("$f")
+done < <(for f in install-*.sh; do echo "$f"; done | sort)
 
 if [ ${#SCRIPTS[@]} -eq 0 ]; then
   echo "Error: No install scripts found!" >&2
   exit 1
 fi
 
+# Platform label for banner
+PLATFORM_LABEL="Unknown"
+case "$OS" in
+  arch) PLATFORM_LABEL="Arch Linux" ;;
+  ubuntu)
+    if [ "$IS_WSL" = true ]; then
+      PLATFORM_LABEL="WSL2 Ubuntu"
+    else
+      PLATFORM_LABEL="Ubuntu"
+    fi
+    ;;
+esac
+
 # Function to show interactive menu
 show_menu() {
   echo "=========================================="
   echo "  Omarchy Supplement Installer"
+  echo "  Platform: $PLATFORM_LABEL"
   echo "=========================================="
   echo ""
   echo "Available scripts:"
   for i in "${!SCRIPTS[@]}"; do
-    script_name="${SCRIPTS[$i]}"
-    # Extract name without install- prefix and .sh suffix
-    display_name="${script_name#install-}"
-    display_name="${display_name%.sh}"
-    printf "  %2d) %s\n" $((i + 1)) "$script_name"
+    printf "  %2d) %s\n" $((i + 1)) "${SCRIPTS[$i]}"
   done
   echo ""
   echo "Select scripts to install:"
@@ -55,7 +80,7 @@ parse_args() {
   local include=()
   local exclude=()
   local has_negation=false
-  
+
   # Check if any argument is negation
   for arg in "${args[@]}"; do
     if [[ "$arg" == !* ]]; then
@@ -63,7 +88,7 @@ parse_args() {
       break
     fi
   done
-  
+
   # Parse arguments
   for arg in "${args[@]}"; do
     if [[ "$arg" == !* ]]; then
@@ -102,7 +127,7 @@ parse_args() {
       [ "$found" = false ] && echo "Warning: Script 'install-${arg}.sh' not found" >&2
     fi
   done
-  
+
   # Return result
   if [ ${#exclude[@]} -gt 0 ]; then
     # Negative selection: all except exclude
@@ -131,10 +156,10 @@ parse_interactive() {
   local include=()
   local exclude=()
   local has_negation=false
-  
+
   # Empty input = all
   [ -z "$input" ] && printf '%s\n' "${!SCRIPTS[@]}" && return
-  
+
   # Check if any item is negation
   read -ra items <<< "$input"
   for item in "${items[@]}"; do
@@ -143,7 +168,7 @@ parse_interactive() {
       break
     fi
   done
-  
+
   # Parse numbers
   for item in "${items[@]}"; do
     if [[ "$item" == !* ]]; then
@@ -174,7 +199,7 @@ parse_interactive() {
       fi
     fi
   done
-  
+
   # Return result
   if [ ${#exclude[@]} -gt 0 ]; then
     # Negative selection
