@@ -39,17 +39,17 @@ Works for both first install and re-run (pulls updates if already cloned).
 **Arch Linux (main branch):**
 
 ```bash
-{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git pull; } || \
-  git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
-  cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
+{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git stash && git pull; } || \
+  git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
+cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
 ```
 
 **WSL2 Ubuntu 24.04 (wsl2-ubuntu branch):**
 
 ```bash
-{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git pull; } || \
-  git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
-  cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
+{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git stash && git pull; } || \
+  git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
+cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
 ```
 
 ## Usage
@@ -124,7 +124,7 @@ sudo ./install-uv.sh
 
 ```bash
 # 1. Clone (or update) the wsl2-ubuntu branch
-[ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git pull || \
+{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git stash && git pull; } || \
   git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 cd ~/omarchy-supplement
 chmod +x *.sh
