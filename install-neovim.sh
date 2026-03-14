@@ -497,21 +497,17 @@ sudo timeout 600 env \
   # Clean stale root nvim data from previous installs (without XDG_DATA_HOME)
   rm -rf /root/.local/share/nvim
 
-  echo "Step 1/3: Installing plugins..."
+  echo "Step 1/2: Installing plugins..."
   /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null
   echo "Plugin sync completed"
 
-  echo "Step 2/3: Installing Mason tools..."
-  # MasonInstall auto-exits headless nvim when all packages finish
+  echo "Step 2/2: Installing Mason tools and TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless \
     -c "lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
     -c "MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service hadolint" \
-    2>&1 || echo "Mason install failed - tools will install on first launch"
-
-  echo "Step 3/3: Installing TreeSitter parsers..."
-  /usr/local/bin/nvim.appimage --headless \
     -c "lua require(\"nvim-treesitter\").install({\"bash\",\"c\",\"diff\",\"dockerfile\",\"html\",\"javascript\",\"json\",\"lua\",\"markdown\",\"markdown_inline\",\"python\",\"regex\",\"toml\",\"tsx\",\"typescript\",\"vim\",\"vimdoc\",\"yaml\"}):wait(300000)" \
-    -c "qall" 2>&1 || echo "TreeSitter install failed - parsers will install on first launch"
+    -c "lua local r=require(\"mason-registry\"); vim.wait(300000, function() for _,n in ipairs({\"tree-sitter-cli\",\"lua-language-server\",\"marksman\",\"bash-language-server\",\"pyright\",\"dockerfile-language-server\",\"docker-compose-language-service\",\"hadolint\"}) do local ok,p=pcall(r.get_package,n); if ok and not p:is_installed() then return false end end return true end, 2000); vim.cmd(\"qall\")" \
+    2>&1 || echo "Installation failed - tools will install on first launch"
 '
 
 # Set read-only permissions for global directory
