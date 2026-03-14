@@ -23,10 +23,13 @@ pkg_install \
   git \
   curl \
   unzip \
-  zsh \
-  bat
+  zsh
 
-# bat is installed as 'batcat' on Ubuntu - create symlink
+# bat - on Ubuntu the package and binary are both called 'batcat'
+if ! command -v bat &>/dev/null && ! command -v batcat &>/dev/null; then
+  pkg_install batcat
+fi
+# Create symlink batcat -> bat so 'bat' command works
 if command -v batcat &>/dev/null && ! command -v bat &>/dev/null; then
   sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
 fi
