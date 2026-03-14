@@ -10,8 +10,15 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo ">> Installing Atuin..."
 
+# Check common install locations (curl installer puts it in ~/.atuin/bin/)
 if command -v atuin &>/dev/null; then
   echo "Atuin is already installed: $(atuin --version)"
+  exit 0
+elif [ -f "$HOME/.atuin/bin/atuin" ]; then
+  echo "Atuin is already installed: $("$HOME/.atuin/bin/atuin" --version)"
+  exit 0
+elif [ -f "$HOME/.local/bin/atuin" ]; then
+  echo "Atuin is already installed: $("$HOME/.local/bin/atuin" --version)"
   exit 0
 fi
 

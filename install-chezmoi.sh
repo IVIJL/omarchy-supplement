@@ -14,7 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo ">> Installing Chezmoi..."
 
-if ! command -v chezmoi &>/dev/null; then
+if command -v chezmoi &>/dev/null || [ -f "$HOME/.local/bin/chezmoi" ]; then
+  # Ensure it's in PATH for the rest of this script
+  export PATH="$HOME/.local/bin:$PATH"
+else
   # Install via yay on Arch, official installer everywhere else
   if [ "$OS" = "arch" ] && command -v yay &>/dev/null; then
     yay -S --noconfirm --needed chezmoi

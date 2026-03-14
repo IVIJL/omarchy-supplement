@@ -7,8 +7,12 @@ set -e
 
 echo ">> Installing Rust..."
 
+# Check PATH and common install location
 if command -v rustc &>/dev/null; then
   echo "Rust is already installed: $(rustc --version)"
+  exit 0
+elif [ -f "$HOME/.cargo/bin/rustc" ]; then
+  echo "Rust is already installed: $("$HOME/.cargo/bin/rustc" --version)"
   exit 0
 fi
 
