@@ -513,7 +513,7 @@ sudo timeout 600 env \
 
   echo "Step 3/3: Installing TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless \
-    -c "lua require(\"lazy\").load({plugins=\"nvim-treesitter\"}); require(\"nvim-treesitter\").install({\"bash\",\"c\",\"css\",\"diff\",\"dockerfile\",\"go\",\"html\",\"javascript\",\"json\",\"lua\",\"luadoc\",\"luap\",\"markdown\",\"markdown_inline\",\"python\",\"query\",\"regex\",\"rst\",\"toml\",\"tsx\",\"typescript\",\"vim\",\"vimdoc\",\"xml\",\"yaml\"}):wait(300000)" \
+    -c "lua require(\"nvim-treesitter\").install({\"bash\",\"c\",\"diff\",\"dockerfile\",\"html\",\"javascript\",\"json\",\"lua\",\"markdown\",\"markdown_inline\",\"python\",\"regex\",\"toml\",\"tsx\",\"typescript\",\"vim\",\"vimdoc\",\"yaml\"}):wait(300000)" \
     -c "qall" 2>&1 || \
     echo "TreeSitter install failed - parsers will install on first launch"
 '
