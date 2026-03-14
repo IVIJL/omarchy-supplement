@@ -29,10 +29,9 @@ detect_pkg_install() {
 
 PKG_INSTALL="$(detect_pkg_install)"
 
-# Verify sudo access (prompts for password upfront)
-echo ">> This installer requires sudo privileges."
-if ! sudo -v; then
-  echo "ERROR: Could not obtain sudo privileges." >&2
+# Verify sudo access (prompts for password if needed)
+if ! sudo true 2>/dev/null; then
+  echo "ERROR: This installer requires sudo privileges." >&2
   exit 1
 fi
 
