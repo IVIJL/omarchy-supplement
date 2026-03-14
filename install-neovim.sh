@@ -42,7 +42,7 @@ esac
 # Install python-lsp-server via uv if available
 if command -v uv &>/dev/null; then
   echo "Installing python-lsp-server via uv..."
-  sudo HOME=/root UV_CACHE_DIR=/root/.cache/uv \
+  sudo env HOME=/root UV_CACHE_DIR=/root/.cache/uv \
     UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --force python-lsp-server \
     --with python-lsp-black \
@@ -53,7 +53,7 @@ fi
 # Install ruff via uv if available (avoids Mason's broken python3 spawn)
 if command -v uv &>/dev/null; then
   echo "Installing ruff via uv..."
-  sudo HOME=/root UV_CACHE_DIR=/root/.cache/uv \
+  sudo env HOME=/root UV_CACHE_DIR=/root/.cache/uv \
     UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --force ruff || echo "Warning: Failed to install ruff via uv"
 fi
@@ -494,6 +494,9 @@ sudo timeout 300 env \
   export HOME="/root"
   [ -n "$MISE_NODE_BIN" ] && export PATH="$MISE_NODE_BIN:$PATH"
 
+  # Clean stale root nvim data from previous installs (without XDG_DATA_HOME)
+  rm -rf /root/.local/share/nvim
+
   echo "Step 1/3: Installing plugins..."
   for i in 1 2 3; do
     /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null
@@ -510,7 +513,7 @@ sudo timeout 300 env \
 
   echo "Step 3/3: Installing TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless \
-    -c "lua require(\"lazy\").load({plugins=\"nvim-treesitter\"}); vim.cmd(\"TSInstallSync all\")" \
+    -c "lua require(\"lazy\").load({plugins=\"nvim-treesitter\"}); require(\"nvim-treesitter\").install(\"all\"):wait(300000)" \
     -c "qall" 2>&1 || \
     echo "TreeSitter install failed - parsers will install on first launch"
 '
