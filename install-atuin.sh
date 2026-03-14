@@ -57,13 +57,28 @@ if [ -f "$HOME/.profile" ]; then
   sed -i '/\.local\/bin\/env/d' "$HOME/.profile"
 fi
 
+# Clean up bad references from ~/.bashrc
+if [ -f "$HOME/.bashrc" ]; then
+  sed -i '/\.atuin\/bin\/env/d' "$HOME/.bashrc"
+  sed -i '/\.local\/bin\/env/d' "$HOME/.bashrc"
+  # shellcheck disable=SC2016 # intentional: matching literal $(atuin init
+  sed -i '/^eval "$(atuin init/d' "$HOME/.bashrc"
+fi
+
 # Clean up bad references from ~/.zshrc
 if [ -f "$HOME/.zshrc" ]; then
   sed -i '/\.atuin\/bin\/env/d' "$HOME/.zshrc"
   sed -i '/\.local\/bin\/env/d' "$HOME/.zshrc"
-  # Remove lines where eval is at the start (not inside if blocks)
   # shellcheck disable=SC2016 # intentional: matching literal $(atuin init
   sed -i '/^eval "$(atuin init/d' "$HOME/.zshrc"
 fi
+
+# Clean up /etc/skel too (for new users)
+for skel_file in /etc/skel/.profile /etc/skel/.bashrc /etc/skel/.zshrc; do
+  if [ -f "$skel_file" ]; then
+    sudo sed -i '/\.atuin\/bin\/env/d' "$skel_file"
+    sudo sed -i '/\.local\/bin\/env/d' "$skel_file"
+  fi
+done
 
 echo ">> Atuin installed: $($ATUIN_BIN --version)"

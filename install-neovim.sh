@@ -28,7 +28,7 @@ fi
 # Install dependencies
 case "$OS" in
   ubuntu)
-    pkg_install libfuse2 xclip ripgrep fd-find build-essential
+    pkg_install libfuse2 xauth xclip ripgrep fd-find build-essential
     # Symlink fdfind -> fd (Ubuntu package name quirk)
     if ! command -v fd &>/dev/null && command -v fdfind &>/dev/null; then
       sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
@@ -389,11 +389,30 @@ return {
 }
 LUAEOF
 
-# Headless plugin installation
+# X11 forwarding setup (sudoers + XAUTHORITY)
+if [ ! -f /etc/sudoers.d/x11-forward ]; then
+  echo 'Defaults env_keep += "DISPLAY XAUTHORITY"' | sudo tee /etc/sudoers.d/x11-forward > /dev/null
+  sudo chmod 440 /etc/sudoers.d/x11-forward
+fi
+
+if ! grep -q 'XAUTHORITY' /etc/profile 2>/dev/null; then
+  sudo tee -a /etc/profile > /dev/null << 'EOF'
+
+# X11 forwarding: set XAUTHORITY if DISPLAY is set but XAUTHORITY is not
+if [ -n "$DISPLAY" ] && [ -z "$XAUTHORITY" ]; then
+  export XAUTHORITY="$HOME/.Xauthority"
+fi
+EOF
+fi
+
+sudo touch /etc/skel/.Xauthority
+sudo chmod 600 /etc/skel/.Xauthority
+
+# Headless plugin installation (must run as root to write to /opt/nvim)
 echo "Installing Neovim plugins (headless)..."
-export XDG_CONFIG_HOME="$NVIM_GLOBAL/config"
 # shellcheck disable=SC2016 # intentional: $i must expand inside bash -c, not here
-timeout 180 bash -c '
+sudo timeout 180 bash -c '
+  export XDG_CONFIG_HOME="/opt/nvim/config"
   for i in 1 2 3; do
     if /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null; then
       echo "Plugin installation attempt $i completed successfully"
