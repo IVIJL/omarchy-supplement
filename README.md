@@ -34,10 +34,12 @@ The installer auto-detects the platform and filters scripts accordingly.
 
 ## Quick install (one-liner)
 
+Works for both first install and re-run (pulls updates if already cloned).
+
 **Arch Linux (main branch):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/main/install-all.sh -o /dev/null && \
+{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git pull; } || \
   git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
   cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
 ```
@@ -45,19 +47,24 @@ curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/main/insta
 **WSL2 Ubuntu 24.04 (wsl2-ubuntu branch):**
 
 ```bash
-git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
+{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git pull; } || \
+  git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement && \
   cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
 ```
 
 ## Usage
 
 ```bash
-# Arch (main branch)
+# First install - Arch (main branch)
 git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 
-# WSL2 Ubuntu (wsl2-ubuntu branch)
+# First install - WSL2 Ubuntu (wsl2-ubuntu branch)
 git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 
+# Update (if already cloned)
+cd ~/omarchy-supplement && git pull
+
+# Run
 cd ~/omarchy-supplement
 chmod +x *.sh
 ./install-all.sh all
@@ -116,8 +123,9 @@ sudo ./install-uv.sh
 ## WSL2 Ubuntu 24.04 quick start
 
 ```bash
-# 1. Clone the wsl2-ubuntu branch
-git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
+# 1. Clone (or update) the wsl2-ubuntu branch
+[ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git pull || \
+  git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 cd ~/omarchy-supplement
 chmod +x *.sh
 
