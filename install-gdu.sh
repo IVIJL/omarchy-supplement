@@ -46,8 +46,7 @@ EOF
 sudo chmod +x /usr/local/bin/gdu-all
 
 # Config - ignore /mnt by default (false positives from mounts)
-for cfg_dest in "$HOME/.gdu.yaml" /etc/skel/.gdu.yaml; do
-  cat > "$cfg_dest" << 'GDUEOF'
+cat > "$HOME/.gdu.yaml" << 'GDUEOF'
 ignore-dirs:
     - /proc
     - /dev
@@ -55,7 +54,7 @@ ignore-dirs:
     - /run
     - /mnt
 GDUEOF
-done
+sudo cp "$HOME/.gdu.yaml" /etc/skel/.gdu.yaml
 
 echo "GDU installed: $(gdu --version 2>&1 | head -1)"
 echo "  gdu / ncdu  = scans without /mnt (default)"
