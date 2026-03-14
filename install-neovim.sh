@@ -486,7 +486,7 @@ if command -v mise &>/dev/null; then
 fi
 
 # shellcheck disable=SC2016 # intentional: $i must expand inside bash -c, not here
-sudo timeout 300 env \
+sudo timeout 600 env \
   MISE_NODE_BIN="${MISE_NODE_BIN}" \
   bash -c '
   export XDG_CONFIG_HOME="/opt/nvim/config"
@@ -513,7 +513,7 @@ sudo timeout 300 env \
 
   echo "Step 3/3: Installing TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless \
-    -c "lua require(\"lazy\").load({plugins=\"nvim-treesitter\"}); require(\"nvim-treesitter\").install(\"all\"):wait(300000)" \
+    -c "lua require(\"lazy\").load({plugins=\"nvim-treesitter\"}); require(\"nvim-treesitter\").install({\"bash\",\"c\",\"css\",\"diff\",\"dockerfile\",\"go\",\"html\",\"javascript\",\"json\",\"lua\",\"luadoc\",\"luap\",\"markdown\",\"markdown_inline\",\"python\",\"query\",\"regex\",\"rst\",\"toml\",\"tsx\",\"typescript\",\"vim\",\"vimdoc\",\"xml\",\"yaml\"}):wait(300000)" \
     -c "qall" 2>&1 || \
     echo "TreeSitter install failed - parsers will install on first launch"
 '
