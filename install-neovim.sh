@@ -135,12 +135,14 @@ if not uv.fs_stat(user_root) and uv.fs_stat(global_root) then
   os.execute('cp -a "' .. global_root .. '" "' .. user_root .. '"')
 end
 
--- Also copy global treesitter parsers on first launch
-local global_ts = "/opt/nvim/data/nvim/site"
-local user_ts = vim.fn.stdpath("data") .. "/site"
-if not uv.fs_stat(user_ts) and uv.fs_stat(global_ts) then
-  vim.fn.mkdir(vim.fn.stdpath("data"), "p")
-  os.execute('cp -a "' .. global_ts .. '" "' .. user_ts .. '"')
+-- Also copy global treesitter parsers and mason tools on first launch
+for _, subdir in ipairs({ "site", "mason" }) do
+  local global_dir = "/opt/nvim/data/nvim/" .. subdir
+  local user_dir = vim.fn.stdpath("data") .. "/" .. subdir
+  if not uv.fs_stat(user_dir) and uv.fs_stat(global_dir) then
+    vim.fn.mkdir(vim.fn.stdpath("data"), "p")
+    os.execute('cp -a "' .. global_dir .. '" "' .. user_dir .. '"')
+  end
 end
 
 local lazypath = user_root .. "/lazy.nvim"
@@ -410,6 +412,37 @@ return {
 }
 LUAEOF
 
+# Write mason-lspconfig overrides (disable npm-dependent servers, use pylsp)
+sudo tee "$NVIM_GLOBAL/config/nvim/lua/plugins/mason-overrides.lua" > /dev/null << 'LUAEOF'
+return {
+  -- mason-lspconfig: only auto-install servers that don't need npm
+  {
+    "mason-org/mason-lspconfig.nvim",
+    opts = function(_, opts)
+      opts.automatic_installation = {
+        exclude = {
+          "bashls",
+          "pyright",
+          "ruff",
+          "dockerls",
+          "docker_compose_language_service",
+        },
+      }
+    end,
+  },
+
+  -- mason-tool-installer: disable auto-run (we pre-install in headless)
+  {
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    optional = true,
+    opts = function(_, opts)
+      opts.auto_update = false
+      opts.run_on_start = false
+    end,
+  },
+}
+LUAEOF
+
 # X11 forwarding setup (sudoers + XAUTHORITY)
 if [ ! -f /etc/sudoers.d/x11-forward ]; then
   echo 'Defaults env_keep += "DISPLAY XAUTHORITY"' | sudo tee /etc/sudoers.d/x11-forward > /dev/null
@@ -438,7 +471,7 @@ sudo timeout 300 bash -c '
   export XDG_DATA_HOME="/opt/nvim/data"
   export HOME="/root"
 
-  echo "Step 1/2: Installing plugins..."
+  echo "Step 1/3: Installing plugins..."
   for i in 1 2 3; do
     if /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null; then
       echo "Plugin sync attempt $i completed successfully"
@@ -449,7 +482,12 @@ sudo timeout 300 bash -c '
     [ "$i" -lt 3 ] && sleep 1
   done
 
-  echo "Step 2/2: Installing TreeSitter parsers..."
+  echo "Step 2/3: Installing Mason tools (tree-sitter-cli, lua_ls, marksman)..."
+  /usr/local/bin/nvim.appimage --headless \
+    "+MasonInstall tree-sitter-cli lua-language-server marksman" +qa 2>/dev/null || \
+    echo "Mason install failed - tools will install on first launch"
+
+  echo "Step 3/3: Installing TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless "+TSInstallSync all" +qa 2>/dev/null || \
     echo "TreeSitter install failed - parsers will install on first launch"
 ' || echo "Plugin installation timed out - plugins will install on first nvim launch"
