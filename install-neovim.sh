@@ -40,22 +40,20 @@ case "$OS" in
 esac
 
 # Install python-lsp-server via uv if available
-if command -v uv &>/dev/null && ! command -v pylsp &>/dev/null; then
+if command -v uv &>/dev/null; then
   echo "Installing python-lsp-server via uv..."
-  export UV_TOOL_DIR=/usr/local/share/uv/tools
-  export UV_TOOL_BIN_DIR=/usr/local/bin
-  sudo -E uv tool install python-lsp-server \
+  sudo HOME=/root UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
+    uv tool install --force python-lsp-server \
     --with python-lsp-black \
     --with python-lsp-isort \
     --with pylsp-mypy || echo "Warning: Failed to install python-lsp-server via uv"
 fi
 
 # Install ruff via uv if available (avoids Mason's broken python3 spawn)
-if command -v uv &>/dev/null && ! command -v ruff &>/dev/null; then
+if command -v uv &>/dev/null; then
   echo "Installing ruff via uv..."
-  export UV_TOOL_DIR=/usr/local/share/uv/tools
-  export UV_TOOL_BIN_DIR=/usr/local/bin
-  sudo -E uv tool install ruff || echo "Warning: Failed to install ruff via uv"
+  sudo HOME=/root UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
+    uv tool install --force ruff || echo "Warning: Failed to install ruff via uv"
 fi
 
 # Download Neovim appimage
@@ -483,24 +481,23 @@ sudo timeout 300 bash -c '
 
   echo "Step 1/3: Installing plugins..."
   for i in 1 2 3; do
-    if /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null; then
-      echo "Plugin sync attempt $i completed successfully"
-      break
-    else
-      echo "Plugin sync attempt $i failed"
-    fi
-    [ "$i" -lt 3 ] && sleep 1
+    /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null
+    echo "Plugin sync attempt $i completed"
+    sleep 1
   done
 
   echo "Step 2/3: Installing Mason tools..."
   /usr/local/bin/nvim.appimage --headless \
+    "+lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
     "+MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service" 2>&1 || \
     echo "Mason install failed - tools will install on first launch"
 
   echo "Step 3/3: Installing TreeSitter parsers..."
-  /usr/local/bin/nvim.appimage --headless "+TSInstallSync all" 2>&1 || \
+  /usr/local/bin/nvim.appimage --headless \
+    "+lua require(\"lazy\").load({plugins=\"nvim-treesitter\"})" \
+    "+TSInstallSync all" +qa 2>&1 || \
     echo "TreeSitter install failed - parsers will install on first launch"
-' || echo "Plugin installation timed out - plugins will install on first nvim launch"
+'
 
 # Set read-only permissions for global directory
 sudo chmod -R 755 "$NVIM_GLOBAL"

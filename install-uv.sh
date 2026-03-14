@@ -53,20 +53,17 @@ fi
 EOF
 sudo chmod 644 /etc/profile.d/00-user-local-bin.sh
 
-# Per-user uv-managed Python (newer than system, like pyenv)
+# Per-user uv-managed Python (symlink from shared install)
 sudo tee /etc/profile.d/01-uv-python.sh > /dev/null << 'EOF'
-# Symlink uv-managed Python to ~/.local/bin on first login (non-root only)
+# Symlink shared uv-managed Python to ~/.local/bin (non-root only)
 if [ "$(id -u)" -ne 0 ] && [ ! -L "$HOME/.local/bin/python3" ]; then
-  if command -v uv >/dev/null 2>&1; then
-    uv python install 3.13 --quiet 2>/dev/null
-    _uv_py="$(uv python find 3.13 2>/dev/null)"
-    if [ -n "$_uv_py" ]; then
-      mkdir -p "$HOME/.local/bin"
-      ln -sf "$_uv_py" "$HOME/.local/bin/python3"
-      ln -sf "$_uv_py" "$HOME/.local/bin/python"
-    fi
-    unset _uv_py
+  _uv_py="$(find /usr/local/share/uv/python -name 'python3.13' -path '*/bin/*' 2>/dev/null | head -1)"
+  if [ -n "$_uv_py" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$_uv_py" "$HOME/.local/bin/python3"
+    ln -sf "$_uv_py" "$HOME/.local/bin/python"
   fi
+  unset _uv_py
 fi
 EOF
 sudo chmod 644 /etc/profile.d/01-uv-python.sh
@@ -84,6 +81,19 @@ fi
 if [ "$(id -u)" -eq 0 ]; then
   export UV_TOOL_DIR=/usr/local/share/uv/tools
   export UV_TOOL_BIN_DIR=/usr/local/bin
+fi
+EOF
+  fi
+fi
+
+# Source uv-python profile.d script from bash.bashrc
+if [ -f /etc/bash.bashrc ]; then
+  if ! grep -q "01-uv-python.sh" /etc/bash.bashrc; then
+    sudo tee -a /etc/bash.bashrc > /dev/null << 'EOF'
+
+# Setup uv-managed Python for non-root users
+if [ -f /etc/profile.d/01-uv-python.sh ]; then
+  . /etc/profile.d/01-uv-python.sh
 fi
 EOF
   fi
@@ -120,6 +130,19 @@ EOF
   fi
 fi
 
+# Source uv-python profile.d script from zshenv
+if [ -n "$ZSHENV" ]; then
+  if ! grep -q "01-uv-python.sh" "$ZSHENV"; then
+    sudo tee -a "$ZSHENV" > /dev/null << 'EOF'
+
+# Setup uv-managed Python for non-root users
+if [ -f /etc/profile.d/01-uv-python.sh ]; then
+  . /etc/profile.d/01-uv-python.sh
+fi
+EOF
+  fi
+fi
+
 # Setup sudoers for UV - ensures sudo uv/uvx uses global tool dirs
 if [ ! -f /etc/sudo-uv.env ]; then
   sudo tee /etc/sudo-uv.env > /dev/null <<'EOF'
@@ -145,8 +168,9 @@ if [ -d "$HOME/.cache/uv" ] && [ "$(stat -c %u "$HOME/.cache/uv")" = "0" ]; then
   sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/uv"
 fi
 
-# Pre-download Python 3.13 so first-login setup is fast
-echo "Pre-downloading Python 3.13 via uv..."
-sudo uv python install 3.13 || echo "Warning: Failed to pre-download Python 3.13"
+# Install Python 3.13 to shared location accessible by all users
+echo "Installing Python 3.13 via uv..."
+sudo UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python uv python install 3.13 || \
+  echo "Warning: Failed to install Python 3.13"
 
 echo ">> UV installed globally (root uses global tools, users use local ~/.local/bin)."
