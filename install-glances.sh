@@ -21,6 +21,6 @@ fi
 echo "Installing Glances via uv..."
 export UV_TOOL_DIR=/usr/local/share/uv/tools
 export UV_TOOL_BIN_DIR=/usr/local/bin
-sudo -E uv tool install 'glances[all]'
+sudo -E uv tool install --force 'glances[all]'
 
 echo ">> Glances installed via uv."

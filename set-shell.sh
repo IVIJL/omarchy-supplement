@@ -20,7 +20,7 @@ fi
 ZSH_PATH="$(which zsh)"
 if [ "$SHELL" != "$ZSH_PATH" ]; then
   echo "Changing default shell to zsh..."
-  chsh -s "$ZSH_PATH"
+  sudo chsh -s "$ZSH_PATH" "$(whoami)"
   echo ">> Default shell changed to zsh. Log out and back in to apply."
 else
   echo ">> ZSH is already the default shell."
