@@ -30,10 +30,11 @@ fi
 
 echo "Chezmoi installed: $(chezmoi --version)"
 
-# Check if chezmoi is already initialized
+# Initialize dotfiles only on first install (skip if already initialized)
 if [ -d "$HOME/.local/share/chezmoi" ]; then
-  echo "Chezmoi is already initialized. Running update..."
-  chezmoi update
+  echo "Chezmoi is already initialized. Skipping dotfiles update."
+  echo "  To update dotfiles manually: chezmoi update"
+  exit 0
 else
   echo ""
   echo "=========================================="

@@ -14,6 +14,9 @@
 
 set -e
 
+# Ctrl+C kills the entire installer, not just the current sub-script
+trap 'echo ""; echo "Interrupted. Exiting."; exit 130' INT
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
