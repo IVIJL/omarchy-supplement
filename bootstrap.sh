@@ -29,6 +29,13 @@ detect_pkg_install() {
 
 PKG_INSTALL="$(detect_pkg_install)"
 
+# Verify sudo access (prompts for password upfront)
+echo ">> This installer requires sudo privileges."
+if ! sudo -v; then
+  echo "ERROR: Could not obtain sudo privileges." >&2
+  exit 1
+fi
+
 # Ensure git is available
 if ! command -v git &>/dev/null; then
   echo ">> Installing git..."

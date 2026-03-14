@@ -25,9 +25,9 @@ pkg_install \
   unzip \
   zsh
 
-# bat - on Ubuntu the package and binary are both called 'batcat'
+# bat - package is 'bat' but binary is 'batcat' on Ubuntu
 if ! command -v bat &>/dev/null && ! command -v batcat &>/dev/null; then
-  pkg_install batcat
+  pkg_install bat
 fi
 # Create symlink batcat -> bat so 'bat' command works
 if command -v batcat &>/dev/null && ! command -v bat &>/dev/null; then
