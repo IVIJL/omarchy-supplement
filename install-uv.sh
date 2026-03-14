@@ -170,7 +170,7 @@ fi
 
 # Install Python 3.13 to shared location accessible by all users
 echo "Installing Python 3.13 via uv..."
-sudo UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python uv python install 3.13 || \
-  echo "Warning: Failed to install Python 3.13"
+sudo UV_CACHE_DIR=/root/.cache/uv UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python \
+  uv python install --force 3.13 || echo "Warning: Failed to install Python 3.13"
 
 echo ">> UV installed globally (root uses global tools, users use local ~/.local/bin)."
