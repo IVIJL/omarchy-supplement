@@ -22,7 +22,7 @@ fi
 
 # Install UV to /usr/local/bin
 curl -LsSf https://astral.sh/uv/install.sh | \
-  sudo UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 bash
+  sudo HOME=/root UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 bash
 
 # Create directories for global tools
 sudo mkdir -p /usr/local/share/uv/tools
@@ -120,6 +120,11 @@ EOF
   sudo chmod 0440 /etc/sudoers.d/uv
   sudo chown root:root /etc/sudoers.d/uv
   sudo visudo -cf /etc/sudoers.d/uv
+fi
+
+# Fix ownership of any root-created cache in user home (from previous installs)
+if [ -d "$HOME/.cache/uv" ] && [ "$(stat -c %u "$HOME/.cache/uv")" = "0" ]; then
+  sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/uv"
 fi
 
 echo ">> UV installed globally (root uses global tools, users use local ~/.local/bin)."

@@ -270,6 +270,20 @@ for idx in "${SELECTED[@]}"; do
   fi
 done
 
+# Post-install scripts (always run, not in interactive menu)
+POST_SCRIPTS=(set-shell.sh)
+for f in "${POST_SCRIPTS[@]}"; do
+  [ -f "$f" ] || continue
+  echo ">> Running $f..."
+  if "./$f"; then
+    echo ""
+  else
+    echo "!! $f failed (exit code $?)"
+    FAILED+=("$f")
+    echo ""
+  fi
+done
+
 echo "=========================================="
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "  WARNING: ${#FAILED[@]} script(s) failed:"
