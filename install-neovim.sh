@@ -42,7 +42,8 @@ esac
 # Install python-lsp-server via uv if available
 if command -v uv &>/dev/null; then
   echo "Installing python-lsp-server via uv..."
-  sudo HOME=/root UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
+  sudo HOME=/root UV_CACHE_DIR=/root/.cache/uv \
+    UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --force python-lsp-server \
     --with python-lsp-black \
     --with python-lsp-isort \
@@ -52,7 +53,8 @@ fi
 # Install ruff via uv if available (avoids Mason's broken python3 spawn)
 if command -v uv &>/dev/null; then
   echo "Installing ruff via uv..."
-  sudo HOME=/root UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
+  sudo HOME=/root UV_CACHE_DIR=/root/.cache/uv \
+    UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --force ruff || echo "Warning: Failed to install ruff via uv"
 fi
 
@@ -473,11 +475,24 @@ sudo chmod 600 /etc/skel/.Xauthority
 # Headless plugin installation (must run as root to write to /opt/nvim)
 echo "Installing Neovim plugins (headless)..."
 # XDG_DATA_HOME=/opt/nvim/data so plugins + treesitter parsers install into the global template
+
+# Resolve mise-managed node path so npm is available inside sudo for Mason
+MISE_NODE_BIN=""
+if command -v mise &>/dev/null; then
+  MISE_NODE_DIR="$(mise where node 2>/dev/null || true)"
+  if [ -n "$MISE_NODE_DIR" ]; then
+    MISE_NODE_BIN="$MISE_NODE_DIR/bin"
+  fi
+fi
+
 # shellcheck disable=SC2016 # intentional: $i must expand inside bash -c, not here
-sudo timeout 300 bash -c '
+sudo timeout 300 env \
+  MISE_NODE_BIN="${MISE_NODE_BIN}" \
+  bash -c '
   export XDG_CONFIG_HOME="/opt/nvim/config"
   export XDG_DATA_HOME="/opt/nvim/data"
   export HOME="/root"
+  [ -n "$MISE_NODE_BIN" ] && export PATH="$MISE_NODE_BIN:$PATH"
 
   echo "Step 1/3: Installing plugins..."
   for i in 1 2 3; do
@@ -488,14 +503,15 @@ sudo timeout 300 bash -c '
 
   echo "Step 2/3: Installing Mason tools..."
   /usr/local/bin/nvim.appimage --headless \
-    "+lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
-    "+MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service" 2>&1 || \
+    -c "lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
+    -c "MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service" \
+    -c "qall" 2>&1 || \
     echo "Mason install failed - tools will install on first launch"
 
   echo "Step 3/3: Installing TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless \
-    "+lua require(\"lazy\").load({plugins=\"nvim-treesitter\"})" \
-    "+TSInstallSync all" +qa 2>&1 || \
+    -c "lua require(\"lazy\").load({plugins=\"nvim-treesitter\"}); vim.cmd(\"TSInstallSync all\")" \
+    -c "qall" 2>&1 || \
     echo "TreeSitter install failed - parsers will install on first launch"
 '
 
