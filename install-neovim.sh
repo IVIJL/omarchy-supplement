@@ -507,7 +507,7 @@ sudo timeout 600 env \
   echo "Step 2/3: Installing Mason tools..."
   /usr/local/bin/nvim.appimage --headless \
     -c "lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
-    -c "MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service" \
+    -c "MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service hadolint" \
     -c "qall" 2>&1 || \
     echo "Mason install failed - tools will install on first launch"
 
