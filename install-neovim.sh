@@ -497,12 +497,9 @@ sudo timeout 600 env \
   # Clean stale root nvim data from previous installs (without XDG_DATA_HOME)
   rm -rf /root/.local/share/nvim
 
-  echo "Step 1/3: Installing plugins..."
-  for i in 1 2 3; do
-    /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null
-    echo "Plugin sync attempt $i completed"
-    sleep 1
-  done
+  echo "Step 1/2: Installing plugins..."
+  /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null
+  echo "Plugin sync completed"
 
   echo "Step 2/2: Installing Mason tools and TreeSitter parsers..."
   /usr/local/bin/nvim.appimage --headless \
