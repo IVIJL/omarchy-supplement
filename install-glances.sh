@@ -1,14 +1,9 @@
 #!/bin/bash
 
-# Install Glances - system monitor
-# Primary: uv tool install (requires UV + sudo for global install)
-# Fallback: yay (Arch) or apt (Ubuntu)
+# Install Glances - system monitor (via uv tool install globally)
+# Requires: uv (installed by install-uv.sh, run first via priority ordering)
 
 set -e
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=lib/platform.sh
-. "$SCRIPT_DIR/lib/platform.sh"
 
 echo ">> Installing Glances..."
 
@@ -17,38 +12,15 @@ if command -v glances &>/dev/null; then
   exit 0
 fi
 
-# Try uv first (needs sudo for global tool install)
-if command -v uv &>/dev/null; then
-  echo "Installing Glances via uv..."
-  # Set UV env for global install
-  export UV_TOOL_DIR=/usr/local/share/uv/tools
-  export UV_TOOL_BIN_DIR=/usr/local/bin
-
-  if sudo -E uv tool install 'glances[all]'; then
-    echo ">> Glances installed via uv."
-    exit 0
-  else
-    echo "UV install failed, falling back to package manager..."
-  fi
+if ! command -v uv &>/dev/null; then
+  echo "ERROR: uv is not installed. Cannot install Glances."
+  echo "Run install-uv.sh first, then retry: ./install-glances.sh"
+  exit 1
 fi
 
-# Fallback: package manager
-case "$OS" in
-  arch)
-    if command -v yay &>/dev/null; then
-      yay -S --noconfirm --needed glances
-    else
-      echo "ERROR: Neither uv nor yay available. Cannot install Glances."
-      exit 1
-    fi
-    ;;
-  ubuntu)
-    pkg_install glances
-    ;;
-  *)
-    echo "ERROR: Cannot install Glances on unsupported OS."
-    exit 1
-    ;;
-esac
+echo "Installing Glances via uv..."
+export UV_TOOL_DIR=/usr/local/share/uv/tools
+export UV_TOOL_BIN_DIR=/usr/local/bin
+sudo -E uv tool install 'glances[all]'
 
-echo ">> Glances installed."
+echo ">> Glances installed via uv."

@@ -29,11 +29,23 @@ if [ "$OS" = "arch" ]; then
   PLATFORM_SKIP[install-base.sh]=1
 fi
 
+# Priority scripts that must run first (in this order) before others
+PRIORITY_ORDER=(install-base.sh install-uv.sh)
+
 # Detect all install-*.sh scripts (excluding install-all.sh and platform-skipped)
+# Priority scripts come first (in defined order), then the rest alphabetically
 SCRIPTS=()
+declare -A SEEN
+for f in "${PRIORITY_ORDER[@]}"; do
+  [ "${PLATFORM_SKIP[$f]+set}" = "set" ] && continue
+  [ -f "$f" ] || continue
+  SCRIPTS+=("$f")
+  SEEN[$f]=1
+done
 while IFS= read -r f; do
   [ "$f" = "install-all.sh" ] && continue
   [ "${PLATFORM_SKIP[$f]+set}" = "set" ] && continue
+  [ "${SEEN[$f]+set}" = "set" ] && continue
   SCRIPTS+=("$f")
 done < <(for f in install-*.sh; do echo "$f"; done | sort)
 
@@ -246,13 +258,30 @@ echo ""
 echo "Installing ${#SELECTED[@]} script(s)..."
 echo ""
 
+FAILED=()
 for idx in "${SELECTED[@]}"; do
   echo ">> Running ${SCRIPTS[$idx]}..."
-  "./${SCRIPTS[$idx]}"
-  echo ""
+  if "./${SCRIPTS[$idx]}"; then
+    echo ""
+  else
+    echo "!! ${SCRIPTS[$idx]} failed (exit code $?)"
+    FAILED+=("${SCRIPTS[$idx]}")
+    echo ""
+  fi
 done
 
 echo "=========================================="
-echo "  All done! Restart your shell or log out"
-echo "  and back in for all changes to apply."
-echo "=========================================="
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "  WARNING: ${#FAILED[@]} script(s) failed:"
+  for f in "${FAILED[@]}"; do
+    echo "    $f  →  ./$f"
+  done
+  echo ""
+  echo "  Fix the issue and re-run the failed script(s) manually."
+  echo "=========================================="
+  exit 1
+else
+  echo "  All done! Restart your shell or log out"
+  echo "  and back in for all changes to apply."
+  echo "=========================================="
+fi
