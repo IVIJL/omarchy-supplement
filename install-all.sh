@@ -33,7 +33,7 @@ if [ "$OS" = "arch" ]; then
 fi
 
 # Priority scripts that must run first (in this order) before others
-PRIORITY_ORDER=(install-base.sh install-uv.sh)
+PRIORITY_ORDER=(install-base.sh install-uv.sh install-mise.sh)
 
 # Detect all install-*.sh scripts (excluding install-all.sh and platform-skipped)
 # Priority scripts come first (in defined order), then the rest alphabetically

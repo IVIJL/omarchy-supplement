@@ -412,22 +412,14 @@ return {
 }
 LUAEOF
 
-# Write mason-lspconfig overrides (disable npm-dependent servers, use pylsp)
+# Write mason-lspconfig overrides (use pylsp instead of pyright for Python)
 sudo tee "$NVIM_GLOBAL/config/nvim/lua/plugins/mason-overrides.lua" > /dev/null << 'LUAEOF'
 return {
-  -- mason-lspconfig: only auto-install servers that don't need npm
+  -- mason-lspconfig: auto-install all configured servers
   {
     "mason-org/mason-lspconfig.nvim",
     opts = function(_, opts)
-      opts.automatic_installation = {
-        exclude = {
-          "bashls",
-          "pyright",
-          "ruff",
-          "dockerls",
-          "docker_compose_language_service",
-        },
-      }
+      opts.automatic_installation = true
     end,
   },
 
@@ -482,9 +474,9 @@ sudo timeout 300 bash -c '
     [ "$i" -lt 3 ] && sleep 1
   done
 
-  echo "Step 2/3: Installing Mason tools (tree-sitter-cli, lua_ls, marksman)..."
+  echo "Step 2/3: Installing Mason tools..."
   /usr/local/bin/nvim.appimage --headless \
-    "+MasonInstall tree-sitter-cli lua-language-server marksman" +qa 2>/dev/null || \
+    "+MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright ruff dockerfile-language-server docker-compose-language-service" +qa 2>/dev/null || \
     echo "Mason install failed - tools will install on first launch"
 
   echo "Step 3/3: Installing TreeSitter parsers..."
