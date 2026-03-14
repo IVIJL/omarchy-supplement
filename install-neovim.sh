@@ -50,6 +50,14 @@ if command -v uv &>/dev/null && ! command -v pylsp &>/dev/null; then
     --with pylsp-mypy || echo "Warning: Failed to install python-lsp-server via uv"
 fi
 
+# Install ruff via uv if available (avoids Mason's broken python3 spawn)
+if command -v uv &>/dev/null && ! command -v ruff &>/dev/null; then
+  echo "Installing ruff via uv..."
+  export UV_TOOL_DIR=/usr/local/share/uv/tools
+  export UV_TOOL_BIN_DIR=/usr/local/bin
+  sudo -E uv tool install ruff || echo "Warning: Failed to install ruff via uv"
+fi
+
 # Download Neovim appimage
 echo "Downloading Neovim appimage..."
 case "$PLATFORM_ARCH_ALT" in
@@ -415,6 +423,16 @@ LUAEOF
 # Write mason-lspconfig overrides (use pylsp instead of pyright for Python)
 sudo tee "$NVIM_GLOBAL/config/nvim/lua/plugins/mason-overrides.lua" > /dev/null << 'LUAEOF'
 return {
+  -- ruff: installed via uv, not Mason (avoids broken python3 spawn)
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      servers = {
+        ruff = { mason = false },
+      },
+    },
+  },
+
   -- mason-lspconfig: auto-install all configured servers
   {
     "mason-org/mason-lspconfig.nvim",
@@ -476,11 +494,11 @@ sudo timeout 300 bash -c '
 
   echo "Step 2/3: Installing Mason tools..."
   /usr/local/bin/nvim.appimage --headless \
-    "+MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright ruff dockerfile-language-server docker-compose-language-service" +qa 2>/dev/null || \
+    "+MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service" 2>&1 || \
     echo "Mason install failed - tools will install on first launch"
 
   echo "Step 3/3: Installing TreeSitter parsers..."
-  /usr/local/bin/nvim.appimage --headless "+TSInstallSync all" +qa 2>/dev/null || \
+  /usr/local/bin/nvim.appimage --headless "+TSInstallSync all" 2>&1 || \
     echo "TreeSitter install failed - parsers will install on first launch"
 ' || echo "Plugin installation timed out - plugins will install on first nvim launch"
 

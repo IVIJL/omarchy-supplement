@@ -53,6 +53,24 @@ fi
 EOF
 sudo chmod 644 /etc/profile.d/00-user-local-bin.sh
 
+# Per-user uv-managed Python (newer than system, like pyenv)
+sudo tee /etc/profile.d/01-uv-python.sh > /dev/null << 'EOF'
+# Symlink uv-managed Python to ~/.local/bin on first login (non-root only)
+if [ "$(id -u)" -ne 0 ] && [ ! -L "$HOME/.local/bin/python3" ]; then
+  if command -v uv >/dev/null 2>&1; then
+    uv python install 3.13 --quiet 2>/dev/null
+    _uv_py="$(uv python find 3.13 2>/dev/null)"
+    if [ -n "$_uv_py" ]; then
+      mkdir -p "$HOME/.local/bin"
+      ln -sf "$_uv_py" "$HOME/.local/bin/python3"
+      ln -sf "$_uv_py" "$HOME/.local/bin/python"
+    fi
+    unset _uv_py
+  fi
+fi
+EOF
+sudo chmod 644 /etc/profile.d/01-uv-python.sh
+
 # Patch /etc/bash.bashrc for bash shell
 if [ -f /etc/bash.bashrc ]; then
   if ! grep -q "00-user-local-bin.sh" /etc/bash.bashrc; then
@@ -126,5 +144,9 @@ fi
 if [ -d "$HOME/.cache/uv" ] && [ "$(stat -c %u "$HOME/.cache/uv")" = "0" ]; then
   sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/uv"
 fi
+
+# Pre-download Python 3.13 so first-login setup is fast
+echo "Pre-downloading Python 3.13 via uv..."
+sudo uv python install 3.13 || echo "Warning: Failed to pre-download Python 3.13"
 
 echo ">> UV installed globally (root uses global tools, users use local ~/.local/bin)."
