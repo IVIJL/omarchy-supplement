@@ -122,8 +122,29 @@ fi
 
 # Write lazy.lua configuration
 sudo tee "$NVIM_GLOBAL/config/nvim/lua/config/lazy.lua" > /dev/null << 'EOF'
-local lazypath = "/opt/nvim/data/nvim/lazy/lazy.nvim"
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
+local uv = vim.uv or vim.loop
+
+-- Global template (read-only, pre-installed by install-neovim.sh)
+local global_root = "/opt/nvim/data/nvim/lazy"
+-- Per-user writable copy (lazy.nvim operates here)
+local user_root = vim.fn.stdpath("data") .. "/lazy"
+
+-- Copy global plugins to user directory on first launch
+if not uv.fs_stat(user_root) and uv.fs_stat(global_root) then
+  vim.fn.mkdir(vim.fn.stdpath("data"), "p")
+  os.execute('cp -a "' .. global_root .. '" "' .. user_root .. '"')
+end
+
+-- Also copy global treesitter parsers on first launch
+local global_ts = "/opt/nvim/data/nvim/site"
+local user_ts = vim.fn.stdpath("data") .. "/site"
+if not uv.fs_stat(user_ts) and uv.fs_stat(global_ts) then
+  vim.fn.mkdir(vim.fn.stdpath("data"), "p")
+  os.execute('cp -a "' .. global_ts .. '" "' .. user_ts .. '"')
+end
+
+local lazypath = user_root .. "/lazy.nvim"
+if not uv.fs_stat(lazypath) then
   local lazyrepo = "https://github.com/folke/lazy.nvim.git"
   local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
   if vim.v.shell_error ~= 0 then
@@ -139,11 +160,11 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
-  root = "/opt/nvim/data/nvim/lazy",
+  root = user_root,
   change_detection = { enabled = false },
   rocks = { enabled = false },
   install = {
-    missing = false,
+    missing = true,
     colorscheme = { "tokyonight", "habamax" },
   },
   spec = {
@@ -410,17 +431,27 @@ sudo chmod 600 /etc/skel/.Xauthority
 
 # Headless plugin installation (must run as root to write to /opt/nvim)
 echo "Installing Neovim plugins (headless)..."
+# XDG_DATA_HOME=/opt/nvim/data so plugins + treesitter parsers install into the global template
 # shellcheck disable=SC2016 # intentional: $i must expand inside bash -c, not here
-sudo timeout 180 bash -c '
+sudo timeout 300 bash -c '
   export XDG_CONFIG_HOME="/opt/nvim/config"
+  export XDG_DATA_HOME="/opt/nvim/data"
+  export HOME="/root"
+
+  echo "Step 1/2: Installing plugins..."
   for i in 1 2 3; do
     if /usr/local/bin/nvim.appimage --headless "+Lazy! sync" +qa 2>/dev/null; then
-      echo "Plugin installation attempt $i completed successfully"
+      echo "Plugin sync attempt $i completed successfully"
+      break
     else
-      echo "Plugin installation attempt $i failed"
+      echo "Plugin sync attempt $i failed"
     fi
     [ "$i" -lt 3 ] && sleep 1
   done
+
+  echo "Step 2/2: Installing TreeSitter parsers..."
+  /usr/local/bin/nvim.appimage --headless "+TSInstallSync all" +qa 2>/dev/null || \
+    echo "TreeSitter install failed - parsers will install on first launch"
 ' || echo "Plugin installation timed out - plugins will install on first nvim launch"
 
 # Set read-only permissions for global directory
