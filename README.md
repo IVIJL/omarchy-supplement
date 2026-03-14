@@ -32,37 +32,32 @@ The installer auto-detects the platform and filters scripts accordingly.
 | `install-chezmoi.sh` | [Chezmoi](https://www.chezmoi.io/) dotfiles from [IVIJL/vlci-dotfiles](https://github.com/IVIJL/vlci-dotfiles) | yes | yes |
 | `set-shell.sh` | Ensures ZSH is the default shell | yes | yes |
 
-## Quick install (one-liner)
+## Quick install
 
-Works for both first install and re-run (pulls updates if already cloned).
+Works for both first install and re-run (auto-updates if already installed).
 
-**Arch Linux (main branch):**
+**WSL2 Ubuntu 24.04:**
 
 ```bash
-{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git stash && git pull; } || \
-  git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
-cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
+curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh | bash
 ```
 
-**WSL2 Ubuntu 24.04 (wsl2-ubuntu branch):**
+**Arch Linux (after merge to main):**
 
 ```bash
-{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git stash && git pull; } || \
-  git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
-cd ~/omarchy-supplement && chmod +x *.sh && ./install-all.sh all
+curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/main/bootstrap.sh | bash
 ```
 
-## Usage
+The bootstrap script handles everything: installs git if missing, clones (or updates) the repo, and runs the installer.
+
+## Manual usage
 
 ```bash
-# First install - Arch (main branch)
-git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
-
 # First install - WSL2 Ubuntu (wsl2-ubuntu branch)
 git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 
-# Update (if already cloned)
-cd ~/omarchy-supplement && git pull
+# First install - Arch (main branch)
+git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
 
 # Run
 cd ~/omarchy-supplement
@@ -123,16 +118,10 @@ sudo ./install-uv.sh
 ## WSL2 Ubuntu 24.04 quick start
 
 ```bash
-# 1. Clone (or update) the wsl2-ubuntu branch
-{ [ -d ~/omarchy-supplement ] && cd ~/omarchy-supplement && git stash && git pull; } || \
-  git clone -b wsl2-ubuntu https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
-cd ~/omarchy-supplement
-chmod +x *.sh
+# 1. Install (or update) everything
+curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh | bash
 
-# 2. Install everything (WezTerm auto-skipped, base tools auto-included)
-./install-all.sh all
-
-# 3. Restart your shell
+# 2. Restart your shell
 exec zsh
 ```
 
