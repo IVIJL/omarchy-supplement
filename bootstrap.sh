@@ -1,6 +1,6 @@
 #!/bin/bash
 # Bootstrap installer for omarchy-supplement
-# Usage: curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh | bash
+# Usage: bash <(curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh)
 
 set -e
 

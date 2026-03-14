@@ -39,13 +39,13 @@ Works for both first install and re-run (auto-updates if already installed).
 **WSL2 Ubuntu 24.04:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh)
 ```
 
 **Arch Linux (after merge to main):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/main/bootstrap.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/main/bootstrap.sh)
 ```
 
 The bootstrap script handles everything: installs git if missing, clones (or updates) the repo, and runs the installer.
@@ -119,7 +119,7 @@ sudo ./install-uv.sh
 
 ```bash
 # 1. Install (or update) everything
-curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/IVIJL/omarchy-supplement/wsl2-ubuntu/bootstrap.sh)
 
 # 2. Restart your shell
 exec zsh

@@ -57,7 +57,7 @@ fi
 # Starship prompt
 if ! command -v starship &>/dev/null; then
   echo "Installing Starship..."
-  curl -sS https://starship.rs/install.sh | sh
+  curl -sS https://starship.rs/install.sh | sh -s -- --yes
 fi
 
 # FZF - fuzzy finder (CTRL-R, CTRL-T, **(TAB))
