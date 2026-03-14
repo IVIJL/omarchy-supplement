@@ -28,12 +28,12 @@ case "$OS" in
       echo "ERROR: Could not determine latest Yazi version."
       exit 1
     fi
-    YAZI_URL="https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-${ARCH_ALT}-unknown-linux-gnu.zip"
+    YAZI_URL="https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-${PLATFORM_ARCH_ALT}-unknown-linux-gnu.zip"
     TMPDIR="$(mktemp -d)"
     curl -Lo "$TMPDIR/yazi.zip" "$YAZI_URL"
     unzip -q "$TMPDIR/yazi.zip" -d "$TMPDIR"
-    sudo install -m 755 "$TMPDIR/yazi-${ARCH_ALT}-unknown-linux-gnu/yazi" /usr/local/bin/yazi
-    sudo install -m 755 "$TMPDIR/yazi-${ARCH_ALT}-unknown-linux-gnu/ya" /usr/local/bin/ya
+    sudo install -m 755 "$TMPDIR/yazi-${PLATFORM_ARCH_ALT}-unknown-linux-gnu/yazi" /usr/local/bin/yazi
+    sudo install -m 755 "$TMPDIR/yazi-${PLATFORM_ARCH_ALT}-unknown-linux-gnu/ya" /usr/local/bin/ya
     rm -rf "$TMPDIR"
     ;;
   *)

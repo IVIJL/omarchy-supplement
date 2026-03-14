@@ -16,7 +16,7 @@ if command -v gdu &>/dev/null; then
   exit 0
 fi
 
-if [ "$ARCH_ALT" = "unknown" ]; then
+if [ "$PLATFORM_ARCH_ALT" = "unknown" ]; then
   echo "ERROR: Unsupported architecture for GDU."
   exit 1
 fi
@@ -31,8 +31,8 @@ sudo rm -f /usr/bin/ncdu /usr/local/bin/ncdu
 # Download GDU from GitHub releases
 echo "Installing GDU from GitHub releases..."
 TMPDIR="$(mktemp -d)"
-curl -L "https://github.com/dundee/gdu/releases/latest/download/gdu_linux_${ARCH}.tgz" | tar xz -C "$TMPDIR"
-sudo install -m 755 "$TMPDIR/gdu_linux_${ARCH}" /usr/local/bin/gdu
+curl -L "https://github.com/dundee/gdu/releases/latest/download/gdu_linux_${PLATFORM_ARCH}.tgz" | tar xz -C "$TMPDIR"
+sudo install -m 755 "$TMPDIR/gdu_linux_${PLATFORM_ARCH}" /usr/local/bin/gdu
 rm -rf "$TMPDIR"
 
 # Symlink ncdu -> gdu

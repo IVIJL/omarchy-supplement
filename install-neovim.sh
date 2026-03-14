@@ -52,7 +52,7 @@ fi
 
 # Download Neovim appimage
 echo "Downloading Neovim appimage..."
-case "$ARCH_ALT" in
+case "$PLATFORM_ARCH_ALT" in
   x86_64)
     NVIM_APPIMAGE="nvim-linux-x86_64.appimage"
     ;;
@@ -60,7 +60,7 @@ case "$ARCH_ALT" in
     NVIM_APPIMAGE="nvim-linux-arm64.appimage"
     ;;
   *)
-    echo "ERROR: Unsupported architecture for Neovim: $ARCH_ALT"
+    echo "ERROR: Unsupported architecture for Neovim: $PLATFORM_ARCH_ALT"
     exit 1
     ;;
 esac

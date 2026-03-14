@@ -31,13 +31,14 @@ is_wsl && IS_WSL=true
 export OS IS_WSL
 
 # Architecture detection (exported for use by sourcing scripts)
+# Uses PLATFORM_ prefix to avoid colliding with tools that read $ARCH (e.g. starship installer)
 case "$(uname -m)" in
-  x86_64)  ARCH="amd64";  ARCH_ALT="x86_64"  ;;
-  aarch64) ARCH="arm64";   ARCH_ALT="aarch64" ;;
-  armv7l)  ARCH="armhf";   ARCH_ALT="armv7"   ;;
-  *)       ARCH="unknown"; ARCH_ALT="unknown"  ;;
+  x86_64)  PLATFORM_ARCH="amd64";  PLATFORM_ARCH_ALT="x86_64"  ;;
+  aarch64) PLATFORM_ARCH="arm64";   PLATFORM_ARCH_ALT="aarch64" ;;
+  armv7l)  PLATFORM_ARCH="armhf";   PLATFORM_ARCH_ALT="armv7"   ;;
+  *)       PLATFORM_ARCH="unknown"; PLATFORM_ARCH_ALT="unknown"  ;;
 esac
-export ARCH ARCH_ALT
+export PLATFORM_ARCH PLATFORM_ARCH_ALT
 
 # Unified package install
 # On Ubuntu, runs apt-get update once per session (marker file with 1h TTL)

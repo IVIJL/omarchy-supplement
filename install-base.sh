@@ -39,10 +39,10 @@ if ! command -v eza &>/dev/null; then
   echo "Installing Eza from GitHub releases..."
   EZA_VERSION=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
   if [ -n "$EZA_VERSION" ]; then
-    if [ "$ARCH_ALT" = "armv7" ]; then
-      EZA_ARCH="${ARCH_ALT}-unknown-linux-gnueabihf"
+    if [ "$PLATFORM_ARCH_ALT" = "armv7" ]; then
+      EZA_ARCH="${PLATFORM_ARCH_ALT}-unknown-linux-gnueabihf"
     else
-      EZA_ARCH="${ARCH_ALT}-unknown-linux-gnu"
+      EZA_ARCH="${PLATFORM_ARCH_ALT}-unknown-linux-gnu"
     fi
     TMPDIR="$(mktemp -d)"
     curl -Lo "$TMPDIR/eza.zip" "https://github.com/eza-community/eza/releases/download/v${EZA_VERSION}/eza_${EZA_ARCH}.zip"
