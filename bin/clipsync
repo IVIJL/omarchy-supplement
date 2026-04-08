@@ -64,7 +64,7 @@ show_preview() {
 
   # first non-empty line
   local line
-  line=$(printf '%s\n' "$text" | sed -n '/./{p;q}')
+  line=$(printf '%s\n' "$text" | grep -m1 '.')
 
   [[ -z "$line" ]] && line="[empty]"
 
