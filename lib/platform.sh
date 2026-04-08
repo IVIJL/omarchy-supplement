@@ -4,8 +4,12 @@
 #   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 #   . "$SCRIPT_DIR/lib/platform.sh"
 
-# Detect OS family from /etc/os-release
+# Detect OS family
 detect_os() {
+  # macOS has no /etc/os-release — check uname first
+  case "$(uname -s)" in
+    Darwin) echo "macos"; return ;;
+  esac
   if [ -f /etc/os-release ]; then
     # shellcheck source=/dev/null
     . /etc/os-release
@@ -35,6 +39,7 @@ export OS IS_WSL
 case "$(uname -m)" in
   x86_64)  PLATFORM_ARCH="amd64";  PLATFORM_ARCH_ALT="x86_64"  ;;
   aarch64) PLATFORM_ARCH="arm64";   PLATFORM_ARCH_ALT="aarch64" ;;
+  arm64)   PLATFORM_ARCH="arm64";   PLATFORM_ARCH_ALT="aarch64" ;;
   armv7l)  PLATFORM_ARCH="armhf";   PLATFORM_ARCH_ALT="armv7"   ;;
   *)       PLATFORM_ARCH="unknown"; PLATFORM_ARCH_ALT="unknown"  ;;
 esac
@@ -51,6 +56,9 @@ pkg_install() {
       _apt_update_if_needed
       sudo apt-get install -y "$@"
       ;;
+    macos)
+      brew install "$@"
+      ;;
     *)
       echo "ERROR: Unsupported OS '$OS' for package install" >&2
       return 1
@@ -64,7 +72,7 @@ _apt_update_if_needed() {
   # Skip if marker exists and is less than 1 hour old
   if [ -f "$marker" ]; then
     local age
-    age=$(( $(date +%s) - $(stat -c %Y "$marker") ))
+    age=$(( $(date +%s) - $(stat_mtime "$marker") ))
     if [ "$age" -lt 3600 ]; then
       return 0
     fi
@@ -83,9 +91,48 @@ pkg_update() {
     ubuntu)
       sudo apt-get update
       ;;
+    macos)
+      brew update
+      ;;
     *)
       echo "ERROR: Unsupported OS '$OS' for package update" >&2
       return 1
       ;;
   esac
+}
+
+# Portable sed -i (BSD sed on macOS requires '' argument)
+sed_i() {
+  if [ "$OS" = "macos" ]; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
+# Portable stat: modification time as epoch seconds
+stat_mtime() {
+  case "$OS" in
+    macos) stat -f %m "$1" ;;
+    *)     stat -c %Y "$1" ;;
+  esac
+}
+
+# Portable stat: file owner uid
+stat_uid() {
+  case "$OS" in
+    macos) stat -f %u "$1" ;;
+    *)     stat -c %u "$1" ;;
+  esac
+}
+
+# Check if running on macOS
+is_macos() { [ "$OS" = "macos" ]; }
+
+# Ensure Homebrew is installed and in PATH (macOS only)
+ensure_homebrew() {
+  if command -v brew &>/dev/null; then return 0; fi
+  echo ">> Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 }

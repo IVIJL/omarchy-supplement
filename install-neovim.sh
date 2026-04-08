@@ -1,14 +1,21 @@
 #!/bin/bash
 
-# Install Neovim with LazyVim - global shared setup
-# Simplified version for modern systems (Ubuntu 24.04+, Arch)
+# Install Neovim with LazyVim
+# Linux: global shared setup with appimage at /opt/nvim/
+# macOS: user-level install via Homebrew at ~/.config/nvim/
 #
-# Architecture:
+# Linux architecture:
 #   - Neovim appimage at /usr/local/bin/nvim.appimage
 #   - Wrapper script at /usr/local/bin/nvim (sets XDG_CONFIG_HOME)
 #   - Global config at /opt/nvim/config/nvim/ (LazyVim starter)
 #   - Global plugins at /opt/nvim/data/nvim/lazy/
 #   - Per-user state: ~/.local/state/nvim/ (undo, shada, cache)
+#
+# macOS architecture:
+#   - Neovim via Homebrew
+#   - User config at ~/.config/nvim/ (LazyVim starter)
+#   - User plugins at ~/.local/share/nvim/lazy/
+#   - User state at ~/.local/state/nvim/
 
 set -e
 
@@ -18,12 +25,282 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 NVIM_GLOBAL="/opt/nvim"
 
+# --- macOS: user-level install via Homebrew ---
+install_neovim_macos() {
+  echo ">> Installing Neovim via Homebrew..."
+
+  brew install neovim ripgrep fd
+
+  # Install python-lsp-server + ruff via uv (user-level, no sudo)
+  if command -v uv &>/dev/null; then
+    echo "Installing python-lsp-server via uv..."
+    uv tool install --force python-lsp-server \
+      --with python-lsp-black \
+      --with python-lsp-isort \
+      --with pylsp-mypy || echo "Warning: Failed to install python-lsp-server via uv"
+
+    echo "Installing ruff via uv..."
+    uv tool install --force ruff || echo "Warning: Failed to install ruff via uv"
+  fi
+
+  local NVIM_CONFIG="$HOME/.config/nvim"
+  local NVIM_DATA="$HOME/.local/share/nvim"
+
+  # Clone LazyVim starter
+  if [ ! -d "$NVIM_CONFIG/lua" ]; then
+    echo "Cloning LazyVim starter..."
+    mkdir -p "$NVIM_CONFIG"
+    git clone https://github.com/LazyVim/starter "$NVIM_CONFIG"
+    rm -rf "$NVIM_CONFIG/.git"
+    rm -f "$NVIM_CONFIG/lua/plugins/example.lua"
+  fi
+
+  # Clone lazy.nvim manager
+  if [ ! -d "$NVIM_DATA/lazy/lazy.nvim/.git" ]; then
+    rm -rf "$NVIM_DATA/lazy/lazy.nvim"
+    mkdir -p "$NVIM_DATA/lazy"
+    git clone --filter=blob:none --branch=stable \
+      https://github.com/folke/lazy.nvim.git \
+      "$NVIM_DATA/lazy/lazy.nvim"
+  fi
+
+  # Write lazy.lua (user-level, no global template copy logic)
+  mkdir -p "$NVIM_CONFIG/lua/config"
+  cat > "$NVIM_CONFIG/lua/config/lazy.lua" << 'LAZYLUA'
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({
+      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+      { out, "WarningMsg" },
+      { "\nPress any key to exit..." },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
+  end
+end
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup({
+  change_detection = { enabled = false },
+  rocks = { enabled = false },
+  install = {
+    missing = true,
+    colorscheme = { "tokyonight", "habamax" },
+  },
+  spec = {
+    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
+    { import = "lazyvim.plugins.extras.util.dot" },
+    { import = "lazyvim.plugins.extras.lang.docker" },
+    { import = "lazyvim.plugins.extras.lang.markdown" },
+    { import = "lazyvim.plugins.extras.lang.python" },
+    { import = "plugins" },
+  },
+  defaults = {
+    lazy = false,
+    version = false,
+  },
+  checker = {
+    enabled = false,
+    notify = false,
+  },
+  performance = {
+    rtp = {
+      disabled_plugins = {
+        "gzip",
+        "tarPlugin",
+        "tohtml",
+        "tutor",
+        "zipPlugin",
+      },
+    },
+  },
+})
+LAZYLUA
+
+  # Write options.lua with macOS clipboard (pbcopy/pbpaste just works)
+  cat > "$NVIM_CONFIG/lua/config/options.lua" << 'LUAEOF'
+-- Options are automatically loaded before lazy.nvim startup
+local opt = vim.opt
+
+-- macOS: pbcopy/pbpaste clipboard works natively with unnamedplus
+opt.clipboard = "unnamedplus"
+LUAEOF
+
+  # Write pylsp.lua configuration (same as Linux)
+  mkdir -p "$NVIM_CONFIG/lua/plugins"
+  cat > "$NVIM_CONFIG/lua/plugins/pylsp.lua" << 'LUAEOF'
+return {
+  {
+    "neovim/nvim-lspconfig",
+    opts = function(_, opts)
+      opts.servers = opts.servers or {}
+
+      local uv = vim.uv or vim.loop
+      local function exists(path)
+        return path and uv.fs_stat(path) ~= nil
+      end
+
+      local function re_escape(s)
+        return (s:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?%{%}%|%\\])", "\\%1"))
+      end
+
+      local function detect_project_python(root_dir)
+        local ve = vim.env.VIRTUAL_ENV
+        if ve and ve ~= "" then
+          local p = ve .. "/bin/python"
+          if exists(p) then return p end
+        end
+        if root_dir and root_dir ~= "" then
+          local p1 = root_dir .. "/venv/bin/python"
+          if exists(p1) then return p1 end
+          local p2 = root_dir .. "/.venv/bin/python"
+          if exists(p2) then return p2 end
+        end
+        return nil
+      end
+
+      opts.servers.pylsp = {
+        mason = false,
+        settings = {
+          pylsp = {
+            plugins = {
+              pycodestyle = { enabled = false },
+              pyflakes = { enabled = false },
+              mccabe = { enabled = false },
+              black = { enabled = true },
+              isort = { enabled = true },
+              pylsp_mypy = {
+                enabled = true,
+                live_mode = false,
+                exclude = { "site-packages/" },
+                overrides = { true },
+              },
+            },
+          },
+        },
+        on_new_config = function(new_config, root_dir)
+          if root_dir and root_dir ~= "" and root_dir ~= "/" then
+            local root_re = re_escape(root_dir)
+            table.insert(
+              new_config.settings.pylsp.plugins.pylsp_mypy.exclude,
+              "^(?!" .. root_re .. "/).*"
+            )
+          end
+          local py = detect_project_python(root_dir)
+          if py then
+            new_config.settings.pylsp.plugins.pylsp_mypy.overrides = {
+              "--python-executable",
+              py,
+              true,
+            }
+          end
+        end,
+      }
+    end,
+  },
+}
+LUAEOF
+
+  # Write treesitter-parsers.lua
+  cat > "$NVIM_CONFIG/lua/plugins/treesitter-parsers.lua" << 'LUAEOF'
+return {
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = function(_, opts)
+      local dir = vim.fn.stdpath("data") .. "/site"
+      vim.fn.mkdir(dir, "p")
+      opts.parser_install_dir = dir
+      opts.install_dir = dir
+      vim.opt.runtimepath:prepend(dir)
+      if type(opts.ensure_installed) == "table" then
+        local seen, out = {}, {}
+        for _, lang in ipairs(opts.ensure_installed) do
+          if not seen[lang] then
+            seen[lang] = true
+            table.insert(out, lang)
+          end
+        end
+        opts.ensure_installed = out
+      end
+    end,
+  },
+}
+LUAEOF
+
+  # Write mason-overrides.lua
+  cat > "$NVIM_CONFIG/lua/plugins/mason-overrides.lua" << 'LUAEOF'
+return {
+  { "neovim/nvim-lspconfig", opts = { servers = { ruff = { mason = false } } } },
+  { "mason-org/mason-lspconfig.nvim", opts = function(_, opts) opts.automatic_installation = true end },
+  { "WhoIsSethDaniel/mason-tool-installer.nvim", optional = true,
+    opts = function(_, opts) opts.auto_update = false; opts.run_on_start = false end },
+}
+LUAEOF
+
+  # Create n and nx aliases in ~/.local/bin/
+  mkdir -p "$HOME/.local/bin"
+
+  cat > "$HOME/.local/bin/n" << 'EOF'
+#!/bin/bash
+exec nvim "$@"
+EOF
+  chmod +x "$HOME/.local/bin/n"
+
+  cat > "$HOME/.local/bin/nx" << 'EOF'
+#!/bin/bash
+if [ -z "$1" ]; then
+  echo "usage: nx <filename>"
+  exit 1
+fi
+if [ ! -e "$1" ]; then
+  printf '#!/usr/bin/env bash\n\nset -eo pipefail\n\n' > "$1"
+fi
+chmod -v 0755 "$1"
+exec nvim "$1"
+EOF
+  chmod +x "$HOME/.local/bin/nx"
+
+  # Resolve mise-managed node path so npm is available for Mason
+  if command -v mise &>/dev/null; then
+    eval "$(mise activate bash)"
+  fi
+
+  # Headless plugin installation (as current user)
+  echo "Installing Neovim plugins (headless)..."
+  timeout 600 nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+  echo "Plugin sync completed"
+
+  echo "Installing Mason tools and TreeSitter parsers..."
+  timeout 600 nvim --headless \
+    -c "lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
+    -c "MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service hadolint" \
+    -c "lua require(\"nvim-treesitter\").install({\"bash\",\"c\",\"diff\",\"dockerfile\",\"html\",\"javascript\",\"json\",\"lua\",\"markdown\",\"markdown_inline\",\"python\",\"regex\",\"toml\",\"tsx\",\"typescript\",\"vim\",\"vimdoc\",\"yaml\"}):wait(300000)" \
+    -c "lua local r=require(\"mason-registry\"); vim.wait(300000, function() for _,n in ipairs({\"tree-sitter-cli\",\"lua-language-server\",\"marksman\",\"bash-language-server\",\"pyright\",\"dockerfile-language-server\",\"docker-compose-language-service\",\"hadolint\"}) do local ok,p=pcall(r.get_package,n); if ok and not p:is_installed() then return false end end return true end, 2000); vim.cmd(\"qall\")" \
+    2>&1 || echo "Installation failed - tools will install on first launch"
+
+  echo ">> Neovim installed: $(nvim --version | head -1)"
+  echo "  Config:  $NVIM_CONFIG/"
+  echo "  Plugins: $NVIM_DATA/lazy/"
+  echo "  State:   ~/.local/state/nvim/"
+}
+
 echo ">> Installing Neovim..."
 
 if command -v nvim &>/dev/null; then
   echo "Neovim is already installed: $(nvim --version | head -1)"
   exit 0
 fi
+
+# macOS: user-level install
+if is_macos; then
+  install_neovim_macos
+  exit 0
+fi
+
+# --- Linux: global shared setup ---
 
 # Install dependencies
 case "$OS" in
@@ -453,24 +730,26 @@ return {
 }
 LUAEOF
 
-# X11 forwarding setup (sudoers + XAUTHORITY)
-if [ ! -f /etc/sudoers.d/x11-forward ]; then
-  echo 'Defaults env_keep += "DISPLAY XAUTHORITY"' | sudo tee /etc/sudoers.d/x11-forward > /dev/null
-  sudo chmod 440 /etc/sudoers.d/x11-forward
-fi
+# X11 forwarding setup (Linux only)
+if [ "$OS" != "macos" ]; then
+  if [ ! -f /etc/sudoers.d/x11-forward ]; then
+    echo 'Defaults env_keep += "DISPLAY XAUTHORITY"' | sudo tee /etc/sudoers.d/x11-forward > /dev/null
+    sudo chmod 440 /etc/sudoers.d/x11-forward
+  fi
 
-if ! grep -q 'XAUTHORITY' /etc/profile 2>/dev/null; then
-  sudo tee -a /etc/profile > /dev/null << 'EOF'
+  if ! grep -q 'XAUTHORITY' /etc/profile 2>/dev/null; then
+    sudo tee -a /etc/profile > /dev/null << 'EOF'
 
 # X11 forwarding: set XAUTHORITY if DISPLAY is set but XAUTHORITY is not
 if [ -n "$DISPLAY" ] && [ -z "$XAUTHORITY" ]; then
   export XAUTHORITY="$HOME/.Xauthority"
 fi
 EOF
-fi
+  fi
 
-sudo touch /etc/skel/.Xauthority
-sudo chmod 600 /etc/skel/.Xauthority
+  sudo touch /etc/skel/.Xauthority
+  sudo chmod 600 /etc/skel/.Xauthority
+fi
 
 # Headless plugin installation (must run as root to write to /opt/nvim)
 echo "Installing Neovim plugins (headless)..."

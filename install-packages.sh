@@ -38,6 +38,9 @@ if ! command -v fastfetch &>/dev/null; then
       sudo apt-get update
       sudo apt-get install -y fastfetch
       ;;
+    macos)
+      pkg_install fastfetch
+      ;;
   esac
 fi
 

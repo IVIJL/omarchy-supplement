@@ -16,6 +16,13 @@ if [ "$OS" = "arch" ]; then
   exit 0
 fi
 
+if is_macos; then
+  echo ">> Installing base packages via Homebrew..."
+  brew install git curl unzip zsh bat eza starship fzf
+  echo ">> Base packages installed."
+  exit 0
+fi
+
 echo ">> Installing base packages for Ubuntu/WSL2..."
 
 # Basic tools via apt
@@ -37,7 +44,7 @@ fi
 # Eza - modern ls replacement (from GitHub releases)
 if ! command -v eza &>/dev/null; then
   echo "Installing Eza from GitHub releases..."
-  EZA_VERSION=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
+  EZA_VERSION=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | grep -oE '"tag_name": "v[0-9.]+"' | grep -oE '[0-9]+(\.[0-9]+)+')
   if [ -n "$EZA_VERSION" ]; then
     if [ "$PLATFORM_ARCH_ALT" = "armv7" ]; then
       EZA_ARCH="${PLATFORM_ARCH_ALT}-unknown-linux-gnueabihf"

@@ -21,9 +21,12 @@ case "$OS" in
   arch)
     pkg_install yazi
     ;;
+  macos)
+    brew install yazi
+    ;;
   ubuntu)
     echo "Installing Yazi from GitHub releases..."
-    YAZI_VERSION=$(curl -s "https://api.github.com/repos/sxyazi/yazi/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
+    YAZI_VERSION=$(curl -s "https://api.github.com/repos/sxyazi/yazi/releases/latest" | grep -oE '"tag_name": "v[0-9.]+"' | grep -oE '[0-9]+(\.[0-9]+)+')
     if [ -z "$YAZI_VERSION" ]; then
       echo "ERROR: Could not determine latest Yazi version."
       exit 1

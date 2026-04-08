@@ -53,32 +53,34 @@ rm -f "$HOME/.local/bin/env" "$HOME/.local/bin/env.fish"
 
 # Clean up bad references from ~/.profile
 if [ -f "$HOME/.profile" ]; then
-  sed -i '/\.atuin\/bin\/env/d' "$HOME/.profile"
-  sed -i '/\.local\/bin\/env/d' "$HOME/.profile"
+  sed_i '/\.atuin\/bin\/env/d' "$HOME/.profile"
+  sed_i '/\.local\/bin\/env/d' "$HOME/.profile"
 fi
 
 # Clean up bad references from ~/.bashrc
 if [ -f "$HOME/.bashrc" ]; then
-  sed -i '/\.atuin\/bin\/env/d' "$HOME/.bashrc"
-  sed -i '/\.local\/bin\/env/d' "$HOME/.bashrc"
+  sed_i '/\.atuin\/bin\/env/d' "$HOME/.bashrc"
+  sed_i '/\.local\/bin\/env/d' "$HOME/.bashrc"
   # shellcheck disable=SC2016 # intentional: matching literal $(atuin init
-  sed -i '/^eval "$(atuin init/d' "$HOME/.bashrc"
+  sed_i '/^eval "$(atuin init/d' "$HOME/.bashrc"
 fi
 
 # Clean up bad references from ~/.zshrc
 if [ -f "$HOME/.zshrc" ]; then
-  sed -i '/\.atuin\/bin\/env/d' "$HOME/.zshrc"
-  sed -i '/\.local\/bin\/env/d' "$HOME/.zshrc"
+  sed_i '/\.atuin\/bin\/env/d' "$HOME/.zshrc"
+  sed_i '/\.local\/bin\/env/d' "$HOME/.zshrc"
   # shellcheck disable=SC2016 # intentional: matching literal $(atuin init
-  sed -i '/^eval "$(atuin init/d' "$HOME/.zshrc"
+  sed_i '/^eval "$(atuin init/d' "$HOME/.zshrc"
 fi
 
-# Clean up /etc/skel too (for new users)
-for skel_file in /etc/skel/.profile /etc/skel/.bashrc /etc/skel/.zshrc; do
-  if [ -f "$skel_file" ]; then
-    sudo sed -i '/\.atuin\/bin\/env/d' "$skel_file"
-    sudo sed -i '/\.local\/bin\/env/d' "$skel_file"
-  fi
-done
+# Clean up /etc/skel too (for new users) - Linux only
+if [ "$OS" != "macos" ]; then
+  for skel_file in /etc/skel/.profile /etc/skel/.bashrc /etc/skel/.zshrc; do
+    if [ -f "$skel_file" ]; then
+      sudo sed -i '/\.atuin\/bin\/env/d' "$skel_file"
+      sudo sed -i '/\.local\/bin\/env/d' "$skel_file"
+    fi
+  done
+fi
 
 echo ">> Atuin installed: $($ATUIN_BIN --version)"

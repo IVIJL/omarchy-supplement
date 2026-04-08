@@ -19,6 +19,10 @@ else
     arch)
       echo "Skipping mise install on Arch (provided by Omarchy)"
       ;;
+    macos)
+      echo "Installing mise via Homebrew..."
+      brew install mise
+      ;;
     ubuntu)
       echo "Installing mise via apt repository..."
       sudo install -dm 755 /etc/apt/keyrings
@@ -36,32 +40,42 @@ else
   esac
 fi
 
-# Activate mise in login shells (idempotent)
-PROFILE_SCRIPT="/etc/profile.d/mise.sh"
-if [ ! -f "$PROFILE_SCRIPT" ]; then
-  echo "Adding mise activation to $PROFILE_SCRIPT..."
-  sudo tee "$PROFILE_SCRIPT" > /dev/null << 'EOF'
+# Activate mise in login shells
+if is_macos; then
+  # macOS: activate in user's .zprofile
+  if ! grep -q 'mise activate' "$HOME/.zprofile" 2>/dev/null; then
+    echo "Adding mise activation to ~/.zprofile..."
+    # shellcheck disable=SC2016 # intentional: literal string, not expansion
+    echo 'eval "$(mise activate zsh)"' >> "$HOME/.zprofile"
+  fi
+else
+  # Linux: activate system-wide
+  PROFILE_SCRIPT="/etc/profile.d/mise.sh"
+  if [ ! -f "$PROFILE_SCRIPT" ]; then
+    echo "Adding mise activation to $PROFILE_SCRIPT..."
+    sudo tee "$PROFILE_SCRIPT" > /dev/null << 'EOF'
 # Activate mise for all login shells
 if command -v mise &>/dev/null; then
   eval "$(mise activate bash)"
 fi
 EOF
-  sudo chmod 644 "$PROFILE_SCRIPT"
-fi
+    sudo chmod 644 "$PROFILE_SCRIPT"
+  fi
 
-# Also activate for zsh (profile.d is not sourced by zsh login shells)
-ZSH_PROFILE="/etc/zsh/zprofile"
-if [ -f "$ZSH_PROFILE" ] || [ -d "$(dirname "$ZSH_PROFILE")" ]; then
-  if ! grep -q 'mise activate' "$ZSH_PROFILE" 2>/dev/null; then
-    echo "Adding mise activation to $ZSH_PROFILE..."
-    sudo mkdir -p "$(dirname "$ZSH_PROFILE")"
-    sudo tee -a "$ZSH_PROFILE" > /dev/null << 'EOF'
+  # Also activate for zsh (profile.d is not sourced by zsh login shells)
+  ZSH_PROFILE="/etc/zsh/zprofile"
+  if [ -f "$ZSH_PROFILE" ] || [ -d "$(dirname "$ZSH_PROFILE")" ]; then
+    if ! grep -q 'mise activate' "$ZSH_PROFILE" 2>/dev/null; then
+      echo "Adding mise activation to $ZSH_PROFILE..."
+      sudo mkdir -p "$(dirname "$ZSH_PROFILE")"
+      sudo tee -a "$ZSH_PROFILE" > /dev/null << 'EOF'
 
 # Activate mise for all login shells
 if command -v mise &>/dev/null; then
   eval "$(mise activate zsh)"
 fi
 EOF
+    fi
   fi
 fi
 

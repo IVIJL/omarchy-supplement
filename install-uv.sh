@@ -13,6 +13,10 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 echo ">> Installing UV globally..."
 
 if command -v uv &>/dev/null; then
@@ -29,18 +33,20 @@ sudo mkdir -p /usr/local/share/uv/tools
 sudo chmod 755 /usr/local/share/uv /usr/local/share/uv/tools
 sudo chown -R root:root /usr/local/share/uv
 
-# Environment variables for root only (regular users use default local install)
-sudo tee /etc/profile.d/uv.sh > /dev/null << 'EOF'
+# Linux: system-wide environment via /etc/profile.d/ and shell rc files
+if [ "$OS" != "macos" ]; then
+  # Environment variables for root only (regular users use default local install)
+  sudo tee /etc/profile.d/uv.sh > /dev/null << 'EOF'
 # Root-only uv tool locations (others use uv defaults)
 if [ "$(id -u)" -eq 0 ]; then
   export UV_TOOL_DIR=/usr/local/share/uv/tools
   export UV_TOOL_BIN_DIR=/usr/local/bin
 fi
 EOF
-sudo chmod 644 /etc/profile.d/uv.sh
+  sudo chmod 644 /etc/profile.d/uv.sh
 
-# Create /etc/profile.d/00-user-local-bin.sh - user-local bin gets priority over system
-sudo tee /etc/profile.d/00-user-local-bin.sh > /dev/null << 'EOF'
+  # Create /etc/profile.d/00-user-local-bin.sh - user-local bin gets priority over system
+  sudo tee /etc/profile.d/00-user-local-bin.sh > /dev/null << 'EOF'
 # Prefer user-local binaries over system ones (users only)
 if [ "$(id -u)" -ne 0 ] && [ -n "$HOME" ]; then
   local_bin="$HOME/.local/bin"
@@ -51,10 +57,10 @@ if [ "$(id -u)" -ne 0 ] && [ -n "$HOME" ]; then
   esac
 fi
 EOF
-sudo chmod 644 /etc/profile.d/00-user-local-bin.sh
+  sudo chmod 644 /etc/profile.d/00-user-local-bin.sh
 
-# Per-user uv-managed Python (symlink from shared install)
-sudo tee /etc/profile.d/01-uv-python.sh > /dev/null << 'EOF'
+  # Per-user uv-managed Python (symlink from shared install)
+  sudo tee /etc/profile.d/01-uv-python.sh > /dev/null << 'EOF'
 # Symlink shared uv-managed Python to ~/.local/bin (non-root only)
 if [ "$(id -u)" -ne 0 ] && [ ! -L "$HOME/.local/bin/python3" ]; then
   _uv_py="$(find /usr/local/share/uv/python -name 'python3.13' -path '*/bin/*' 2>/dev/null | head -1)"
@@ -66,12 +72,12 @@ if [ "$(id -u)" -ne 0 ] && [ ! -L "$HOME/.local/bin/python3" ]; then
   unset _uv_py
 fi
 EOF
-sudo chmod 644 /etc/profile.d/01-uv-python.sh
+  sudo chmod 644 /etc/profile.d/01-uv-python.sh
 
-# Patch /etc/bash.bashrc for bash shell
-if [ -f /etc/bash.bashrc ]; then
-  if ! grep -q "00-user-local-bin.sh" /etc/bash.bashrc; then
-    sudo tee -a /etc/bash.bashrc > /dev/null << 'EOF'
+  # Patch /etc/bash.bashrc for bash shell
+  if [ -f /etc/bash.bashrc ]; then
+    if ! grep -q "00-user-local-bin.sh" /etc/bash.bashrc; then
+      sudo tee -a /etc/bash.bashrc > /dev/null << 'EOF'
 
 # Prefer user-local binaries in interactive bash too
 if [ -f /etc/profile.d/00-user-local-bin.sh ]; then
@@ -83,26 +89,27 @@ if [ "$(id -u)" -eq 0 ]; then
   export UV_TOOL_BIN_DIR=/usr/local/bin
 fi
 EOF
+    fi
   fi
-fi
 
-# Source uv-python profile.d script from bash.bashrc
-if [ -f /etc/bash.bashrc ]; then
-  if ! grep -q "01-uv-python.sh" /etc/bash.bashrc; then
-    sudo tee -a /etc/bash.bashrc > /dev/null << 'EOF'
+  # Source uv-python profile.d script from bash.bashrc
+  if [ -f /etc/bash.bashrc ]; then
+    if ! grep -q "01-uv-python.sh" /etc/bash.bashrc; then
+      sudo tee -a /etc/bash.bashrc > /dev/null << 'EOF'
 
 # Setup uv-managed Python for non-root users
 if [ -f /etc/profile.d/01-uv-python.sh ]; then
   . /etc/profile.d/01-uv-python.sh
 fi
 EOF
+    fi
   fi
-fi
+fi  # end Linux-only /etc/profile.d/ section
 
-# Patch /etc/zsh/zshenv for zsh shell
-# zshenv may be at /etc/zsh/zshenv (Arch/Ubuntu) or /etc/zshenv
-ZSHENV=""
-if [ -f /etc/zsh/zshenv ]; then
+# Patch zshenv for zsh shell (platform-aware path)
+if is_macos; then
+  ZSHENV="/etc/zshenv"
+elif [ -f /etc/zsh/zshenv ]; then
   ZSHENV="/etc/zsh/zshenv"
 elif [ -f /etc/zshenv ]; then
   ZSHENV="/etc/zshenv"
@@ -111,10 +118,12 @@ elif command -v zsh &>/dev/null; then
   sudo mkdir -p /etc/zsh
   sudo touch /etc/zsh/zshenv
   ZSHENV="/etc/zsh/zshenv"
+else
+  ZSHENV=""
 fi
 
 if [ -n "$ZSHENV" ]; then
-  if ! grep -q "00-user-local-bin.sh" "$ZSHENV"; then
+  if ! grep -q "00-user-local-bin" "$ZSHENV" 2>/dev/null; then
     sudo tee -a "$ZSHENV" > /dev/null << 'EOF'
 
 if [ "$(id -u)" -eq 0 ]; then
@@ -122,22 +131,26 @@ if [ "$(id -u)" -eq 0 ]; then
   export UV_TOOL_BIN_DIR=/usr/local/bin
 fi
 
-# Prefer user-local binaries in zsh
-if [ -f /etc/profile.d/00-user-local-bin.sh ]; then
-  . /etc/profile.d/00-user-local-bin.sh
-fi
+# Prefer user-local binaries
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) : ;;
+  *) [ "$(id -u)" -ne 0 ] && export PATH="$HOME/.local/bin:$PATH" ;;
+esac
 EOF
   fi
-fi
 
-# Source uv-python profile.d script from zshenv
-if [ -n "$ZSHENV" ]; then
-  if ! grep -q "01-uv-python.sh" "$ZSHENV"; then
+  if ! grep -q "uv-python" "$ZSHENV" 2>/dev/null; then
     sudo tee -a "$ZSHENV" > /dev/null << 'EOF'
 
-# Setup uv-managed Python for non-root users
-if [ -f /etc/profile.d/01-uv-python.sh ]; then
-  . /etc/profile.d/01-uv-python.sh
+# Symlink shared uv-managed Python to ~/.local/bin (non-root only)
+if [ "$(id -u)" -ne 0 ] && [ ! -L "$HOME/.local/bin/python3" ]; then
+  _uv_py="$(find /usr/local/share/uv/python -name 'python3.13' -path '*/bin/*' 2>/dev/null | head -1)"
+  if [ -n "$_uv_py" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$_uv_py" "$HOME/.local/bin/python3"
+    ln -sf "$_uv_py" "$HOME/.local/bin/python"
+  fi
+  unset _uv_py
 fi
 EOF
   fi
@@ -165,7 +178,7 @@ EOF
 fi
 
 # Fix ownership of any root-created cache in user home (from previous installs)
-if [ -d "$HOME/.cache/uv" ] && [ "$(stat -c %u "$HOME/.cache/uv")" = "0" ]; then
+if [ -d "$HOME/.cache/uv" ] && [ "$(stat_uid "$HOME/.cache/uv")" = "0" ]; then
   sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/uv"
 fi
 

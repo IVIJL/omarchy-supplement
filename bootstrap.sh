@@ -5,11 +5,14 @@
 set -e
 
 REPO_URL="https://github.com/IVIJL/omarchy-supplement.git"
-BRANCH="wsl2-ubuntu"
+BRANCH="macos-support"
 INSTALL_DIR="$HOME/omarchy-supplement"
 
 # Detect OS and set package install command
 detect_pkg_install() {
+  case "$(uname -s)" in
+    Darwin) echo "brew install"; return ;;
+  esac
   if [ -f /etc/os-release ]; then
     # shellcheck source=/dev/null
     . /etc/os-release
@@ -27,12 +30,29 @@ detect_pkg_install() {
   fi
 }
 
+# macOS prerequisites: Xcode CLI tools + Homebrew
+if [ "$(uname -s)" = "Darwin" ]; then
+  if ! xcode-select -p &>/dev/null; then
+    echo ">> Installing Xcode Command Line Tools..."
+    xcode-select --install
+    echo "Press Enter after Xcode tools finish installing..."
+    read -r
+  fi
+  if ! command -v brew &>/dev/null; then
+    echo ">> Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
+fi
+
 PKG_INSTALL="$(detect_pkg_install)"
 
-# Verify sudo access (prompts for password if needed)
-if ! sudo true 2>/dev/null; then
-  echo "ERROR: This installer requires sudo privileges." >&2
-  exit 1
+# Verify sudo access on Linux (prompts for password if needed)
+if [ "$(uname -s)" != "Darwin" ]; then
+  if ! sudo true 2>/dev/null; then
+    echo "ERROR: This installer requires sudo privileges." >&2
+    exit 1
+  fi
 fi
 
 # Ensure git is available

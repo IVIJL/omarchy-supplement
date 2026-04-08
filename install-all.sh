@@ -68,6 +68,7 @@ case "$OS" in
       PLATFORM_LABEL="Ubuntu"
     fi
     ;;
+  macos) PLATFORM_LABEL="macOS" ;;
 esac
 
 # Function to show interactive menu

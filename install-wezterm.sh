@@ -17,6 +17,14 @@ fi
 
 echo ">> Installing WezTerm..."
 
+if is_macos; then
+  if ! command -v wezterm &>/dev/null; then
+    brew install --cask wezterm
+  fi
+  echo ">> WezTerm installed."
+  exit 0
+fi
+
 if ! command -v wezterm &>/dev/null; then
   pkg_install wezterm
 fi

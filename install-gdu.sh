@@ -21,6 +21,15 @@ if [ "$PLATFORM_ARCH_ALT" = "unknown" ]; then
   exit 1
 fi
 
+# macOS: install via Homebrew
+if is_macos; then
+  brew install gdu
+  # Symlink ncdu -> gdu
+  ln -sf "$(brew --prefix)/bin/gdu" "$(brew --prefix)/bin/ncdu" 2>/dev/null || true
+  echo "GDU installed: $(gdu --version 2>&1 | head -1)"
+  exit 0
+fi
+
 # Remove ncdu if installed via apt (we replace it with gdu)
 if [ "$OS" = "ubuntu" ] && dpkg -l ncdu &>/dev/null 2>&1; then
   echo "Removing apt-installed ncdu (replacing with gdu)..."
@@ -54,7 +63,9 @@ ignore-dirs:
     - /run
     - /mnt
 GDUEOF
-sudo cp "$HOME/.gdu.yaml" /etc/skel/.gdu.yaml
+if [ "$OS" != "macos" ]; then
+  sudo cp "$HOME/.gdu.yaml" /etc/skel/.gdu.yaml
+fi
 
 echo "GDU installed: $(gdu --version 2>&1 | head -1)"
 echo "  gdu / ncdu  = scans without /mnt (default)"

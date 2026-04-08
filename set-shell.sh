@@ -20,7 +20,11 @@ fi
 ZSH_PATH="$(which zsh)"
 if [ "$SHELL" != "$ZSH_PATH" ]; then
   echo "Changing default shell to zsh..."
-  sudo chsh -s "$ZSH_PATH" "$(whoami)"
+  if is_macos; then
+    chsh -s "$ZSH_PATH"
+  else
+    sudo chsh -s "$ZSH_PATH" "$(whoami)"
+  fi
   echo ">> Default shell changed to zsh. Log out and back in to apply."
 else
   echo ">> ZSH is already the default shell."
