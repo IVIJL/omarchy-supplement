@@ -23,6 +23,17 @@ cd "$SCRIPT_DIR"
 # shellcheck source=lib/platform.sh
 . "$SCRIPT_DIR/lib/platform.sh"
 
+# Keep sudo alive for the duration of the install (prevents repeated password prompts)
+# Ask for password once upfront, then refresh every 50 seconds in the background
+if sudo -v 2>/dev/null; then
+  ( while true; do sudo -n true; sleep 50; done ) &
+  SUDO_KEEPALIVE_PID=$!
+  # shellcheck disable=SC2064 # intentional: expand PID now, not at trap time
+  trap "kill $SUDO_KEEPALIVE_PID 2>/dev/null; echo ''; echo 'Interrupted. Exiting.'; exit 130" INT
+  # shellcheck disable=SC2064
+  trap "kill $SUDO_KEEPALIVE_PID 2>/dev/null" EXIT
+fi
+
 # Scripts to exclude based on platform (space-delimited string for bash 3 compat)
 PLATFORM_SKIP=" "
 if [ "$IS_WSL" = true ] || [ "$OS" = "ubuntu" ]; then

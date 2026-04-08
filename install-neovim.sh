@@ -270,11 +270,11 @@ EOF
 
   # Headless plugin installation (as current user)
   echo "Installing Neovim plugins (headless)..."
-  timeout 600 nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+  portable_timeout 600 nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
   echo "Plugin sync completed"
 
   echo "Installing Mason tools and TreeSitter parsers..."
-  timeout 600 nvim --headless \
+  portable_timeout 600 nvim --headless \
     -c "lua require(\"lazy\").load({plugins=\"mason.nvim\"})" \
     -c "MasonInstall tree-sitter-cli lua-language-server marksman bash-language-server pyright dockerfile-language-server docker-compose-language-service hadolint" \
     -c "lua require(\"nvim-treesitter\").install({\"bash\",\"c\",\"diff\",\"dockerfile\",\"html\",\"javascript\",\"json\",\"lua\",\"markdown\",\"markdown_inline\",\"python\",\"regex\",\"toml\",\"tsx\",\"typescript\",\"vim\",\"vimdoc\",\"yaml\"}):wait(300000)" \

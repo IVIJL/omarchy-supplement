@@ -137,6 +137,19 @@ else
 fi
 export ROOT_GROUP
 
+# Portable timeout (macOS has no timeout, use perl fallback)
+portable_timeout() {
+  local secs="$1"; shift
+  if command -v timeout &>/dev/null; then
+    timeout "$secs" "$@"
+  elif command -v gtimeout &>/dev/null; then
+    gtimeout "$secs" "$@"
+  else
+    # perl fallback for macOS without coreutils
+    perl -e "alarm $secs; exec @ARGV" -- "$@"
+  fi
+}
+
 # Ensure Homebrew is installed and in PATH (macOS only)
 ensure_homebrew() {
   if command -v brew &>/dev/null; then return 0; fi

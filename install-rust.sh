@@ -5,7 +5,19 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 echo ">> Installing Rust..."
+
+# Fix ownership of existing rustup/cargo dirs (may be root-owned from previous sudo install)
+for d in "$HOME/.rustup" "$HOME/.cargo"; do
+  if [ -d "$d" ] && [ "$(stat_uid "$d")" != "$(id -u)" ]; then
+    echo "Fixing ownership of $d..."
+    sudo chown -R "$(id -u):$(id -g)" "$d"
+  fi
+done
 
 # Check PATH and common install location
 if command -v rustc &>/dev/null; then

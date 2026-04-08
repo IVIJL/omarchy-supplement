@@ -16,10 +16,18 @@ if ! command -v zsh &>/dev/null; then
   pkg_install zsh
 fi
 
-# 2. Set ZSH as default shell if it isn't already
-ZSH_PATH="$(which zsh)"
+# 2. Determine which zsh to use as default
+if is_macos; then
+  # macOS: prefer system /bin/zsh (always in /etc/shells)
+  # Homebrew zsh at /opt/homebrew/bin/zsh is not in /etc/shells by default
+  ZSH_PATH="/bin/zsh"
+else
+  ZSH_PATH="$(which zsh)"
+fi
+
+# 3. Set ZSH as default shell if it isn't already
 if [ "$SHELL" != "$ZSH_PATH" ]; then
-  echo "Changing default shell to zsh..."
+  echo "Changing default shell to $ZSH_PATH..."
   if is_macos; then
     chsh -s "$ZSH_PATH"
   else
