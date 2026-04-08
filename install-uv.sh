@@ -37,7 +37,7 @@ curl -LsSf https://astral.sh/uv/install.sh | \
 # Create directories for global tools
 sudo mkdir -p /usr/local/share/uv/tools
 sudo chmod 755 /usr/local/share/uv /usr/local/share/uv/tools
-sudo chown -R root:root /usr/local/share/uv
+sudo chown -R root:$ROOT_GROUP /usr/local/share/uv
 
 # Linux: system-wide environment via /etc/profile.d/ and shell rc files
 if [ "$OS" != "macos" ]; then
@@ -169,7 +169,7 @@ UV_TOOL_DIR=/usr/local/share/uv/tools
 UV_TOOL_BIN_DIR=/usr/local/bin
 UV_CACHE_DIR=${ROOT_HOME}/.cache/uv
 ENVEOF
-  sudo chown root:root /etc/sudo-uv.env
+  sudo chown root:$ROOT_GROUP /etc/sudo-uv.env
   sudo chmod 0644 /etc/sudo-uv.env
 
   sudo tee /etc/sudoers.d/uv > /dev/null <<'EOF'
@@ -179,7 +179,7 @@ Defaults!/usr/local/bin/uvx env_file=/etc/sudo-uv.env
 EOF
 
   sudo chmod 0440 /etc/sudoers.d/uv
-  sudo chown root:root /etc/sudoers.d/uv
+  sudo chown root:$ROOT_GROUP /etc/sudoers.d/uv
   sudo visudo -cf /etc/sudoers.d/uv
 fi
 

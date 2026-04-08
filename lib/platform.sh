@@ -129,6 +129,14 @@ stat_uid() {
 # Check if running on macOS
 is_macos() { [ "$OS" = "macos" ]; }
 
+# Root ownership group (macOS uses "wheel", Linux uses "root")
+if [ "$OS" = "macos" ]; then
+  ROOT_GROUP="wheel"
+else
+  ROOT_GROUP="root"
+fi
+export ROOT_GROUP
+
 # Ensure Homebrew is installed and in PATH (macOS only)
 ensure_homebrew() {
   if command -v brew &>/dev/null; then return 0; fi

@@ -792,7 +792,7 @@ sudo timeout 600 env \
 
 # Set read-only permissions for global directory
 sudo chmod -R 755 "$NVIM_GLOBAL"
-sudo chown -R root:root "$NVIM_GLOBAL"
+sudo chown -R root:"$ROOT_GROUP" "$NVIM_GLOBAL"
 
 echo ">> Neovim installed: $(/usr/local/bin/nvim.appimage --version | head -1)"
 echo "  Config:  $NVIM_GLOBAL/config/nvim/"
