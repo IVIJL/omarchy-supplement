@@ -52,10 +52,10 @@ else
 fi
 
 # Fix compinit "insecure directories" warning on macOS
-# Homebrew share dirs need to be owned by root or current user with no group write
+# Homebrew share dir and its zsh subdirs must not be group-writable
 if is_macos; then
   BREW_SHARE="$(brew --prefix)/share"
-  for d in "$BREW_SHARE/zsh" "$BREW_SHARE/zsh/site-functions"; do
+  for d in "$BREW_SHARE" "$BREW_SHARE/zsh" "$BREW_SHARE/zsh/site-functions"; do
     if [ -d "$d" ]; then
       chmod go-w "$d"
     fi
