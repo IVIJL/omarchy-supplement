@@ -319,7 +319,8 @@ esac
 # Install python-lsp-server via uv if available
 if command -v uv &>/dev/null; then
   echo "Installing python-lsp-server via uv..."
-  sudo env HOME=/root UV_CACHE_DIR=/root/.cache/uv \
+  ROOT_HOME="/root"
+  sudo env HOME="$ROOT_HOME" UV_CACHE_DIR="$ROOT_HOME/.cache/uv" \
     UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --force python-lsp-server \
     --with python-lsp-black \
@@ -330,7 +331,7 @@ fi
 # Install ruff via uv if available (avoids Mason's broken python3 spawn)
 if command -v uv &>/dev/null; then
   echo "Installing ruff via uv..."
-  sudo env HOME=/root UV_CACHE_DIR=/root/.cache/uv \
+  sudo env HOME="$ROOT_HOME" UV_CACHE_DIR="$ROOT_HOME/.cache/uv" \
     UV_TOOL_DIR=/usr/local/share/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin \
     uv tool install --force ruff || echo "Warning: Failed to install ruff via uv"
 fi

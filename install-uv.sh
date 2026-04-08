@@ -25,8 +25,14 @@ if command -v uv &>/dev/null; then
 fi
 
 # Install UV to /usr/local/bin
+# macOS root home is /var/root, Linux is /root
+if is_macos; then
+  ROOT_HOME="/var/root"
+else
+  ROOT_HOME="/root"
+fi
 curl -LsSf https://astral.sh/uv/install.sh | \
-  sudo HOME=/root UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 bash
+  sudo HOME="$ROOT_HOME" UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 bash
 
 # Create directories for global tools
 sudo mkdir -p /usr/local/share/uv/tools
@@ -158,11 +164,11 @@ fi
 
 # Setup sudoers for UV - ensures sudo uv/uvx uses global tool dirs
 if [ ! -f /etc/sudo-uv.env ]; then
-  sudo tee /etc/sudo-uv.env > /dev/null <<'EOF'
+  sudo tee /etc/sudo-uv.env > /dev/null <<ENVEOF
 UV_TOOL_DIR=/usr/local/share/uv/tools
 UV_TOOL_BIN_DIR=/usr/local/bin
-UV_CACHE_DIR=/root/.cache/uv
-EOF
+UV_CACHE_DIR=${ROOT_HOME}/.cache/uv
+ENVEOF
   sudo chown root:root /etc/sudo-uv.env
   sudo chmod 0644 /etc/sudo-uv.env
 
@@ -184,7 +190,7 @@ fi
 
 # Install Python 3.13 to shared location accessible by all users
 echo "Installing Python 3.13 via uv..."
-sudo env UV_CACHE_DIR=/root/.cache/uv UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python \
+sudo env UV_CACHE_DIR="${ROOT_HOME}/.cache/uv" UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python \
   uv python install --force 3.13 || echo "Warning: Failed to install Python 3.13"
 
 echo ">> UV installed globally (root uses global tools, users use local ~/.local/bin)."
