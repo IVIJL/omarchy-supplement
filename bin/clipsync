@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+# Clipboard sync via Dropbox file
+# Usage: clipsync push   (clipboard -> Dropbox)
+#        clipsync pull   (Dropbox -> clipboard)
+
+# Detect platform
+IS_WSL=0
+IS_MACOS=0
+case "$(uname -s)" in
+  Darwin)
+    IS_MACOS=1
+    ;;
+  *)
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+      IS_WSL=1
+    fi
+    ;;
+esac
+
+# Dropbox sync file location
+if [[ $IS_WSL -eq 1 ]]; then
+  DROPBOX_FILE="/mnt/c/Users/milos/Dropbox/cl"
+elif [[ $IS_MACOS -eq 1 ]]; then
+  # macOS Dropbox: new CloudStorage format, fallback to legacy path
+  if [[ -d "$HOME/Library/CloudStorage/Dropbox" ]]; then
+    DROPBOX_FILE="$HOME/Library/CloudStorage/Dropbox/cl"
+  else
+    DROPBOX_FILE="$HOME/Dropbox/cl"
+  fi
+else
+  DROPBOX_FILE="$HOME/Dropbox/cl"
+fi
+
+# Validate Dropbox directory exists
+DROPBOX_DIR="$(dirname "$DROPBOX_FILE")"
+if [[ ! -d "$DROPBOX_DIR" ]]; then
+  echo "ERROR: Dropbox directory not found: $DROPBOX_DIR" >&2
+  echo "Install Dropbox first and make sure it is syncing, then try again." >&2
+  exit 1
+fi
+
+# Detect clipboard tools
+if [[ $IS_MACOS -eq 1 ]]; then
+  CLIP_IN="pbpaste"
+  CLIP_OUT="pbcopy"
+elif command -v wl-copy >/dev/null 2>&1 && command -v wl-paste >/dev/null 2>&1; then
+  CLIP_IN="wl-paste"
+  CLIP_OUT="wl-copy"
+elif command -v xclip >/dev/null 2>&1; then
+  CLIP_IN="xclip -selection clipboard -o"
+  CLIP_OUT="xclip -selection clipboard -i"
+else
+  echo "No clipboard tool found (pbcopy/pbpaste, wl-copy/wl-paste, or xclip)" >&2
+  exit 1
+fi
+
+# print preview (first 20 chars + …)
+show_preview() {
+  local text="$1"
+
+  # remove Windows CR
+  text=$(printf '%s' "$text" | tr -d '\r')
+
+  # first non-empty line
+  local line
+  line=$(printf '%s\n' "$text" | sed -n '/./{p;q}')
+
+  [[ -z "$line" ]] && line="[empty]"
+
+  # truncate to 20 chars
+  local short
+  short=$(printf '%s' "$line" | head -c 20)
+
+  # check if text continues (line longer than 20 chars or multiple non-empty lines)
+  local nonempty_count
+  nonempty_count=$(printf '%s\n' "$text" | awk 'NF{c++} END{print c+0}')
+
+  if [[ "$line" != "$short" ]] || [[ "$nonempty_count" -gt 1 ]]; then
+    printf '%s...\n' "$short"
+  else
+    printf '%s\n' "$short"
+  fi
+}
+
+pull() {
+  if [[ ! -f "$DROPBOX_FILE" ]]; then
+    echo "Dropbox sync file not found: $DROPBOX_FILE" >&2
+    echo "Push something first with: clipsync push" >&2
+    return 1
+  fi
+
+  local drop_content
+  drop_content=$(tr -d '\r' < "$DROPBOX_FILE")
+
+  printf '%s' "$drop_content" | eval "$CLIP_OUT"
+
+  echo "📥 Pulled into clipboard (preview):"
+  show_preview "$drop_content"
+}
+
+push() {
+  local current
+  current=$(eval "$CLIP_IN" 2>/dev/null | tr -d '\r')
+
+  printf '%s' "$current" >"$DROPBOX_FILE"
+
+  echo "📤 Pushed from clipboard (preview):"
+  show_preview "$current"
+}
+
+case "$1" in
+pull) pull ;;
+push) push ;;
+*)
+  echo "Usage: $0 pull|push"
+  exit 1
+  ;;
+esac
