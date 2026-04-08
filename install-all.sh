@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Omarchy Supplement - Main installer with script selection
-# Supports Arch Linux (with Omarchy) and WSL2 Ubuntu 24.04
+# Supports Arch Linux (with Omarchy), WSL2 Ubuntu 24.04, and macOS
 #
 # Usage:
 #   git clone https://github.com/IVIJL/omarchy-supplement.git ~/omarchy-supplement
@@ -23,14 +23,32 @@ cd "$SCRIPT_DIR"
 # shellcheck source=lib/platform.sh
 . "$SCRIPT_DIR/lib/platform.sh"
 
-# Scripts to exclude based on platform
-declare -A PLATFORM_SKIP
+# Scripts to exclude based on platform (space-delimited string for bash 3 compat)
+PLATFORM_SKIP=" "
 if [ "$IS_WSL" = true ] || [ "$OS" = "ubuntu" ]; then
-  PLATFORM_SKIP[install-wezterm.sh]=1
+  PLATFORM_SKIP="${PLATFORM_SKIP}install-wezterm.sh "
 fi
 if [ "$OS" = "arch" ]; then
-  PLATFORM_SKIP[install-base.sh]=1
+  PLATFORM_SKIP="${PLATFORM_SKIP}install-base.sh "
 fi
+
+# Helper: check if a script is in the skip list
+is_skipped() {
+  case "$PLATFORM_SKIP" in
+    *" $1 "*) return 0 ;;
+    *)        return 1 ;;
+  esac
+}
+
+# Helper: check if a script is already in SCRIPTS array
+is_seen() {
+  local needle="$1"
+  local s
+  for s in "${SCRIPTS[@]}"; do
+    [ "$s" = "$needle" ] && return 0
+  done
+  return 1
+}
 
 # Priority scripts that must run first (in this order) before others
 PRIORITY_ORDER=(install-base.sh install-uv.sh install-mise.sh)
@@ -38,17 +56,15 @@ PRIORITY_ORDER=(install-base.sh install-uv.sh install-mise.sh)
 # Detect all install-*.sh scripts (excluding install-all.sh and platform-skipped)
 # Priority scripts come first (in defined order), then the rest alphabetically
 SCRIPTS=()
-declare -A SEEN
 for f in "${PRIORITY_ORDER[@]}"; do
-  [ "${PLATFORM_SKIP[$f]+set}" = "set" ] && continue
+  is_skipped "$f" && continue
   [ -f "$f" ] || continue
   SCRIPTS+=("$f")
-  SEEN[$f]=1
 done
 while IFS= read -r f; do
   [ "$f" = "install-all.sh" ] && continue
-  [ "${PLATFORM_SKIP[$f]+set}" = "set" ] && continue
-  [ "${SEEN[$f]+set}" = "set" ] && continue
+  is_skipped "$f" && continue
+  is_seen "$f" && continue
   SCRIPTS+=("$f")
 done < <(for f in install-*.sh; do echo "$f"; done | sort)
 
@@ -239,17 +255,18 @@ parse_interactive() {
 }
 
 # Main logic
+SELECTED=()
 if [ $# -eq 0 ]; then
   # Interactive mode
   show_menu
   read -r -p "[Enter for all] > " selection
-  mapfile -t SELECTED < <(parse_interactive "$selection")
+  while IFS= read -r _line; do SELECTED+=("$_line"); done < <(parse_interactive "$selection")
 elif [ "$1" = "all" ]; then
   # "all" parameter = install all without interaction
-  mapfile -t SELECTED < <(printf '%s\n' "${!SCRIPTS[@]}")
+  while IFS= read -r _line; do SELECTED+=("$_line"); done < <(printf '%s\n' "${!SCRIPTS[@]}")
 else
   # Command line arguments
-  mapfile -t SELECTED < <(parse_args "$@")
+  while IFS= read -r _line; do SELECTED+=("$_line"); done < <(parse_args "$@")
 fi
 
 # Execute selected scripts
