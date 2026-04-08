@@ -24,8 +24,9 @@ cd "$SCRIPT_DIR"
 . "$SCRIPT_DIR/lib/platform.sh"
 
 # Keep sudo alive for the duration of the install (prevents repeated password prompts)
-# Ask for password once upfront, then refresh every 50 seconds in the background
-if sudo -v 2>/dev/null; then
+# Prompt for password explicitly, then refresh every 50 seconds in the background
+echo "Some scripts require sudo. Enter your password once now:"
+if sudo -v; then
   ( while true; do sudo -n true; sleep 50; done ) &
   SUDO_KEEPALIVE_PID=$!
   # shellcheck disable=SC2064 # intentional: expand PID now, not at trap time

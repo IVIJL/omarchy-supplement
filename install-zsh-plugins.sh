@@ -51,4 +51,15 @@ else
   clone_plugin "fzf-tab"             "https://github.com/Aloxaf/fzf-tab"
 fi
 
+# Fix compinit "insecure directories" warning on macOS
+# Homebrew share dirs need to be owned by root or current user with no group write
+if is_macos; then
+  BREW_SHARE="$(brew --prefix)/share"
+  for d in "$BREW_SHARE/zsh" "$BREW_SHARE/zsh/site-functions"; do
+    if [ -d "$d" ]; then
+      chmod go-w "$d"
+    fi
+  done
+fi
+
 echo ">> ZSH plugins installed."
