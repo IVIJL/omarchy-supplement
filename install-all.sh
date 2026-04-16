@@ -37,7 +37,7 @@ fi
 
 # Scripts to exclude based on platform (space-delimited string for bash 3 compat)
 PLATFORM_SKIP=" "
-if [ "$IS_WSL" = true ] || [ "$OS" = "ubuntu" ]; then
+if [ "$IS_WSL" = true ] || [ "$OS" = "ubuntu" ] || [ "$OS" = "arch" ]; then
   PLATFORM_SKIP="${PLATFORM_SKIP}install-wezterm.sh "
 fi
 if [ "$OS" = "arch" ]; then
