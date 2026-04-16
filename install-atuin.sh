@@ -40,6 +40,14 @@ else
   exit 0
 fi
 
+# Ensure ~/.atuin/bin/atuin exists (some .zshrc configs check this path)
+# When installed via package manager, binary is in /usr/bin/ but dotfiles
+# may expect it at ~/.atuin/bin/atuin
+if [ ! -f "$HOME/.atuin/bin/atuin" ] && command -v atuin &>/dev/null; then
+  mkdir -p "$HOME/.atuin/bin"
+  ln -sf "$(command -v atuin)" "$HOME/.atuin/bin/atuin"
+fi
+
 # Import bash history
 $ATUIN_BIN import bash 2>/dev/null || true
 

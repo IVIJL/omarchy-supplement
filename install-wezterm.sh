@@ -26,7 +26,16 @@ if is_macos; then
 fi
 
 if ! command -v wezterm &>/dev/null; then
-  pkg_install wezterm
+  if [ "$OS" = "arch" ]; then
+    if command -v yay &>/dev/null; then
+      yay -S --noconfirm --needed wezterm
+    else
+      echo "ERROR: yay not found. Install wezterm from AUR manually." >&2
+      exit 1
+    fi
+  else
+    pkg_install wezterm
+  fi
 fi
 
 echo ">> WezTerm installed: $(wezterm --version)"

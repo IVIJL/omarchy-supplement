@@ -289,8 +289,64 @@ EOF
 
 echo ">> Installing Neovim..."
 
+# Ensure n and nx wrapper scripts exist (even if nvim is already installed)
+install_wrappers() {
+  local nvim_bin
+  nvim_bin="$(command -v nvim 2>/dev/null || echo "nvim")"
+
+  if is_macos; then
+    mkdir -p "$HOME/.local/bin"
+
+    cat > "$HOME/.local/bin/n" << EOF
+#!/bin/bash
+exec $nvim_bin "\$@"
+EOF
+    chmod +x "$HOME/.local/bin/n"
+
+    cat > "$HOME/.local/bin/nx" << 'NXEOF'
+#!/bin/bash
+if [ -z "$1" ]; then
+  echo "usage: nx <filename>"
+  exit 1
+fi
+if [ ! -e "$1" ]; then
+  printf '#!/usr/bin/env bash\n\nset -eo pipefail\n\n' > "$1"
+fi
+chmod -v 0755 "$1"
+exec nvim "$1"
+NXEOF
+    chmod +x "$HOME/.local/bin/nx"
+  else
+    # Linux: install to /usr/local/bin/ (global)
+    sudo tee /usr/local/bin/n > /dev/null << EOF
+#!/bin/bash
+exec $nvim_bin "\$@"
+EOF
+    sudo chmod +x /usr/local/bin/n
+
+    sudo tee /usr/local/bin/nx > /dev/null << 'NXEOF'
+#!/bin/bash
+if [ -z "$1" ]; then
+  echo "usage: nx <filename>"
+  exit 1
+fi
+if [ ! -e "$1" ]; then
+  printf '#!/usr/bin/env bash\n\nset -eo pipefail\n\n' > "$1"
+fi
+chmod -v 0755 "$1"
+exec nvim "$1"
+NXEOF
+    sudo chmod +x /usr/local/bin/nx
+  fi
+}
+
 if command -v nvim &>/dev/null; then
   echo "Neovim is already installed: $(nvim --version | head -1)"
+  # Still ensure wrappers exist
+  if ! command -v n &>/dev/null || ! command -v nx &>/dev/null; then
+    echo "Installing n/nx wrappers..."
+    install_wrappers
+  fi
   exit 0
 fi
 
